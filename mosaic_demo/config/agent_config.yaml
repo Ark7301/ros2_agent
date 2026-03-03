@@ -1,0 +1,26 @@
+# Demo Agent 配置
+model_provider:
+  type: "llm"
+  config:
+    model: "gpt-4"
+    api_base: "https://api.openai.com/v1"
+    temperature: 0.1
+    timeout: 30
+
+# Capability 加载列表
+capabilities:
+  - name: "navigation"
+    class: "capabilities.mock_navigation.MockNavigationCapability"
+    enabled: true
+  - name: "motion"
+    class: "capabilities.mock_motion.MockMotionCapability"
+    enabled: true
+
+# 重试策略
+retry:
+  max_retries: 3
+  backoff_base: 2
+
+# 日志
+logging:
+  level: "INFO"

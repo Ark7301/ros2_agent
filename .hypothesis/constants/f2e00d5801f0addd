@@ -1,0 +1,4 @@
+# file: /Volumes/PSN/Users/jijiking/ros2_agent/mosaic_demo/model_providers/openai_client.py
+# hypothesis_version: 6.141.1
+
+[0.1, 2.0, '/', 'Authorization', 'Content-Type', 'OPENAI_API_KEY', 'api_base', 'application/json', 'backoff_base', 'functions', 'gpt-4', 'max_retries', 'messages', 'model', 'temperature', 'timeout']

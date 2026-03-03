@@ -1,0 +1,4 @@
+# file: /Volumes/PSN/Users/jijiking/ros2_agent/mosaic_demo/interfaces_abstract/data_models.py
+# hypothesis_version: 6.141.1
+
+[1.0, 'TaskResult', 'busy', 'cancelled', 'confidence', 'error', 'executing', 'failed', 'idle', 'intent', 'params', 'pending', 'raw_response', 'sub_tasks', 'succeeded', 'zh']
