@@ -1,0 +1,4 @@
+# file: /Volumes/PSN/Users/jijiking/ros2_agent/mosaic_demo/model_providers/llm_provider.py
+# hypothesis_version: 6.141.1
+
+[0.0, 1.0, 'LLM 调用失败: %s', 'arguments', 'choices', 'content', 'description', 'error', 'function_call', 'message', 'name', 'object', 'parameters', 'properties', 'required', 'role', 'string', 'system', 'target', 'type', 'user', '{}', '目标参数', '解析 LLM 响应失败: %s']

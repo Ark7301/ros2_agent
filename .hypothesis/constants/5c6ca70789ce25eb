@@ -1,0 +1,4 @@
+# file: /Volumes/PSN/Users/jijiking/ros2_agent/mosaic_demo/agent_core/task_executor.py
+# hypothesis_version: 6.141.1
+
+['error', 'message', '任务已取消', '执行计划为空，无需执行', '未知错误']

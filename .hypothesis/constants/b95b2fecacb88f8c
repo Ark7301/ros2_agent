@@ -1,0 +1,4 @@
+# file: /Volumes/PSN/Users/jijiking/ros2_agent/mosaic_demo/capabilities/mock_navigation.py
+# hypothesis_version: 6.141.1
+
+[0.1, 'coordinates', 'navigate_to', 'navigation', 'patrol', 'target']
