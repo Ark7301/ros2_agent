@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 TaskExecutor — 任务执行器
 

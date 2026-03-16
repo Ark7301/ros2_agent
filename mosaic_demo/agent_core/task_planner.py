@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 TaskPlanner — Demo 版任务规划器
 

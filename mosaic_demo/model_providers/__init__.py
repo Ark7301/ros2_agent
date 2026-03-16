@@ -1,1 +1,1 @@
-# AI Provider 实现层 — LLMProvider、OpenAIClient
+# AI Provider 实现层 — LLMProvider、MideaClient、MiniMaxClient

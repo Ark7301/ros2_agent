@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 ModelProvider 抽象基类 — AI 模型提供者接口
 

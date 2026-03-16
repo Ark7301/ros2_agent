@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 核心数据模型 — MOSAIC Demo 管道数据流基础
 

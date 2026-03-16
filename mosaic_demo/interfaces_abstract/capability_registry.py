@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 CapabilityRegistry — 能力注册中心
 

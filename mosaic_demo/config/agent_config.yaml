@@ -1,11 +1,15 @@
 # Demo Agent 配置
+# 可选 type: "midea_claude" | "minimax"
 model_provider:
-  type: "llm"
+  type: "minimax"
   config:
-    model: "gpt-4"
-    api_base: "https://api.openai.com/v1"
-    temperature: 0.1
-    timeout: 30
+    model: "MiniMax-M2.5"
+    api_base: "https://api.minimaxi.com/anthropic"
+    temperature: 1.0
+    max_tokens: 4096
+    timeout: 60
+    enable_thinking: false
+    thinking_budget: 8000
 
 # Capability 加载列表
 capabilities:
