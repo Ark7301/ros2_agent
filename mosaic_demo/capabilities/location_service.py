@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 语义地名服务 — 维护地名到坐标的 YAML 映射
 

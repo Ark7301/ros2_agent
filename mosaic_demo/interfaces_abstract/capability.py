@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Capability 抽象基类 — 机器人能力接口
 

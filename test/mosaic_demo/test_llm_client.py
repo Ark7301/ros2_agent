@@ -1,26 +1,24 @@
 """
-OpenAIClient 属性测试
+MideaClient 属性测试
 
-使用 hypothesis 验证 OpenAIClient 的重试行为。
+使用 hypothesis 验证 MideaClient 的重试行为。
 """
 
 import pytest
 import httpx
 from hypothesis import given, strategies as st, settings
 
-from mosaic_demo.model_providers.openai_client import OpenAIClient, OpenAIClientError
+from mosaic_demo.model_providers.midea_client import MideaClient, MideaClientError
 
 # 保存原始的 AsyncClient 类，避免 monkeypatch 后丢失引用
 _OriginalAsyncClient = httpx.AsyncClient
 
 
-class TestOpenAIClientRetryLimit:
+class TestMideaClientRetryLimit:
     """
-    Property 17: OpenAIClient 重试次数上限
+    Property 17: MideaClient 重试次数上限
 
-    **Validates: Requirements 9.2, 9.3**
-
-    对于任意持续失败的 API 调用，OpenAIClient 的重试次数不应超过配置的最大重试次数。
+    对于任意持续失败的 API 调用，MideaClient 的重试次数不应超过配置的最大重试次数。
     """
 
     @given(max_retries=st.integers(min_value=1, max_value=5))
@@ -28,11 +26,9 @@ class TestOpenAIClientRetryLimit:
     @pytest.mark.asyncio
     async def test_retry_count_equals_max_retries(self, max_retries: int):
         """
-        **Validates: Requirements 9.2, 9.3**
-
         对于任意 max_retries (1-5)，当 API 持续失败时，
         实际 HTTP 调用次数应恰好等于 max_retries，
-        且最终抛出 OpenAIClientError。
+        且最终抛出 MideaClientError。
         """
         # 记录实际调用次数
         call_count = 0
@@ -49,9 +45,7 @@ class TestOpenAIClientRetryLimit:
         transport = httpx.MockTransport(mock_handler)
 
         # 创建客户端，backoff_base 设为极小值以加速测试
-        client = OpenAIClient(
-            model="gpt-4",
-            api_base="https://api.openai.com/v1",
+        client = MideaClient(
             max_retries=max_retries,
             backoff_base=0.001,
         )
@@ -66,10 +60,10 @@ class TestOpenAIClientRetryLimit:
 
         httpx.AsyncClient.__init__ = patched_init
         try:
-            # 调用应抛出 OpenAIClientError
-            with pytest.raises(OpenAIClientError):
+            # 调用应抛出 MideaClientError
+            with pytest.raises(MideaClientError):
                 await client.chat_completion(
-                    messages=[{"role": "user", "content": "test"}]
+                    messages=[{"role": "user", "content": [{"text": "test"}]}]
                 )
         finally:
             # 恢复原始 __init__
@@ -119,7 +113,7 @@ _json_values = st.recursive(
     max_leaves=10,
 )
 
-# 生成合法的 function_call 参数字典
+# 生成合法的 tool_use 参数字典
 _params_strategy = st.dictionaries(
     st.text(
         alphabet=st.characters(
@@ -135,19 +129,16 @@ _params_strategy = st.dictionaries(
     max_size=5,
 )
 
-# 生成非空的 function name（仅含字母和下划线，模拟真实意图名）
+# 生成非空的 tool name（仅含字母和下划线，模拟真实意图名）
 _intent_name_strategy = st.from_regex(r"[a-z][a-z_]{0,19}", fullmatch=True)
 
 
-class TestFunctionCallingResponseParsing:
+class TestToolUseResponseParsing:
     """
-    Property 19: Function Calling 响应解析
+    Property 19: Tool Use 响应解析
 
-    **Validates: Requirements 3.5**
-
-    对于任意合法的 OpenAI Function Calling 响应（包含 function_call.name 和
-    function_call.arguments），LLMProvider 应将其正确解析为 TaskResult，
-    其中 intent 等于 function_call.name，params 等于解析后的 arguments 字典。
+    对于任意合法的美的 AIMP Claude API 响应（包含 toolUse），
+    LLMProvider 应将其正确解析为 TaskResult。
     """
 
     @given(
@@ -159,40 +150,45 @@ class TestFunctionCallingResponseParsing:
         self, intent_name: str, params: dict
     ):
         """
-        **Validates: Requirements 3.5**
-
-        对于任意合法的 function_call.name 和 function_call.arguments，
+        对于任意合法的 toolUse.name 和 toolUse.input，
         _parse_response 应正确解析为 TaskResult，
-        intent 等于 name，params 等于 arguments 解析后的字典。
+        intent 等于 name，params 等于 input 字典。
         """
         # 构造 Mock 依赖
         mock_client = MagicMock()
         registry = CapabilityRegistry()
         provider = LLMProvider(client=mock_client, registry=registry)
 
-        # 构造合法的 OpenAI API 响应
+        # 构造合法的美的 AIMP Claude API 响应
         response = {
-            "choices": [
-                {
-                    "message": {
-                        "function_call": {
-                            "name": intent_name,
-                            "arguments": json.dumps(params, ensure_ascii=False),
-                        }
-                    }
+            "output": {
+                "message": {
+                    "content": [
+                        {"text": "让我为您执行操作"},
+                        {
+                            "toolUse": {
+                                "name": intent_name,
+                                "input": params,
+                                "toolUseId": "tooluse_test_123",
+                            }
+                        },
+                    ],
+                    "role": "assistant",
                 }
-            ]
+            },
+            "stopReason": "tool_use",
+            "usage": {"inputTokens": 100, "outputTokens": 50, "totalTokens": 150},
         }
 
         # 调用 _parse_response
         result = provider._parse_response(response)
 
-        # 验证 intent 等于 function_call.name
+        # 验证 intent 等于 toolUse.name
         assert result.intent == intent_name, (
             f"期望 intent={intent_name!r}，实际 intent={result.intent!r}"
         )
 
-        # 验证 params 等于解析后的 arguments 字典
+        # 验证 params 等于 toolUse.input
         assert result.params == params, (
             f"期望 params={params!r}，实际 params={result.params!r}"
         )

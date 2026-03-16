@@ -17,8 +17,10 @@ from mosaic_demo.capabilities.location_service import LocationService
 from mosaic_demo.interfaces_abstract.capability_registry import CapabilityRegistry
 from mosaic_demo.capabilities.mock_navigation import MockNavigationCapability
 from mosaic_demo.capabilities.mock_motion import MockMotionCapability
-from mosaic_demo.model_providers.openai_client import OpenAIClient
+from mosaic_demo.model_providers.midea_client import MideaClient
 from mosaic_demo.model_providers.llm_provider import LLMProvider
+from mosaic_demo.model_providers.minimax_client import MiniMaxClient
+from mosaic_demo.model_providers.minimax_provider import MiniMaxProvider
 from mosaic_demo.agent_core.task_parser import TaskParser
 from mosaic_demo.agent_core.task_planner import TaskPlanner
 from mosaic_demo.agent_core.task_executor import TaskExecutor
@@ -46,7 +48,11 @@ def main():
 
     # 配置日志
     log_level = config_manager.get("logging.level", "INFO")
-    logging.basicConfig(level=getattr(logging, log_level, logging.INFO))
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
 
     # ── 2. 初始化 LocationService ──
     locations_path = os.path.join(base_dir, "config", "locations.yaml")
@@ -65,14 +71,23 @@ def main():
     # ── 4. 初始化 AI Provider 层 ──
     model_config = config_manager.get("model_provider.config", {})
     retry_config = config_manager.get("retry", {})
+    provider_type = config_manager.get("model_provider.type", "minimax")
 
-    openai_client = OpenAIClient(
-        config=model_config,
-        max_retries=retry_config.get("max_retries", 3),
-        backoff_base=retry_config.get("backoff_base", 2),
-    )
-
-    llm_provider = LLMProvider(client=openai_client, registry=registry)
+    if provider_type == "minimax":
+        minimax_client = MiniMaxClient(
+            config=model_config,
+            max_retries=retry_config.get("max_retries", 3),
+            backoff_base=retry_config.get("backoff_base", 2),
+        )
+        llm_provider = MiniMaxProvider(client=minimax_client, registry=registry)
+    else:
+        # 美的 AIMP Claude API（兼容旧配置）
+        midea_client = MideaClient(
+            config=model_config,
+            max_retries=retry_config.get("max_retries", 3),
+            backoff_base=retry_config.get("backoff_base", 2),
+        )
+        llm_provider = LLMProvider(client=midea_client, registry=registry)
 
     # ── 5. 初始化 Agent 核心调度层 ──
     task_parser = TaskParser(model_provider=llm_provider)
@@ -93,12 +108,20 @@ def main():
         Returns:
             最终执行结果
         """
+        logging.info("=" * 60)
+        logging.info("📥 用户输入: %s", context.raw_input)
+        logging.info("=" * 60)
+
         # 任务解析
+        logging.info("── 阶段 1/3: 任务解析 (TaskParser → MiniMax LLM) ──")
         task_result = await task_parser.parse(context)
+        logging.info("📋 解析结果: intent=%s, params=%s, confidence=%.2f",
+                      task_result.intent, task_result.params, task_result.confidence)
 
         # 如果解析结果为错误，直接返回
         if task_result.intent == "error":
             error_msg = task_result.params.get("message", "未知错误")
+            logging.info("❌ 解析失败: %s", error_msg)
             return ExecutionResult(
                 task_id="",
                 success=False,
@@ -108,10 +131,21 @@ def main():
             )
 
         # 任务规划
+        logging.info("── 阶段 2/3: 任务规划 (TaskPlanner) ──")
         plan = await task_planner.plan(task_result)
+        logging.info("📝 执行计划: plan_id=%s, actions=%d",
+                      plan.plan_id[:8], len(plan.actions))
+        for i, action in enumerate(plan.actions):
+            logging.info("  动作[%d]: %s → capability=%s, params=%s",
+                          i, action.action_name, action.capability_name, action.parameters)
 
         # 任务执行
+        logging.info("── 阶段 3/3: 任务执行 (TaskExecutor) ──")
         result = await task_executor.execute_plan(plan)
+        logging.info("🏁 执行结果: success=%s, message=%s", result.success, result.message)
+        if result.data:
+            logging.info("📦 返回数据: %s", result.data)
+        logging.info("=" * 60)
         return result
 
     # ── 7. 启动 CLI 交互主循环 ──

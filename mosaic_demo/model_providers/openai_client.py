@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 OpenAI API 异步客户端
 

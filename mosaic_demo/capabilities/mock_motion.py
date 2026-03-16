@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Mock 运动能力 — 模拟 rotate 和 stop 意图
 
