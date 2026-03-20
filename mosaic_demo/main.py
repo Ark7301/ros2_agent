@@ -79,7 +79,7 @@ def main():
             max_retries=retry_config.get("max_retries", 3),
             backoff_base=retry_config.get("backoff_base", 2),
         )
-        llm_provider = MiniMaxProvider(client=minimax_client, registry=registry)
+        llm_provider = MiniMaxProvider(client=minimax_client, registry=registry, location_service=location_service)
     else:
         # 美的 AIMP Claude API（兼容旧配置）
         midea_client = MideaClient(
@@ -87,7 +87,7 @@ def main():
             max_retries=retry_config.get("max_retries", 3),
             backoff_base=retry_config.get("backoff_base", 2),
         )
-        llm_provider = LLMProvider(client=midea_client, registry=registry)
+        llm_provider = LLMProvider(client=midea_client, registry=registry, location_service=location_service)
 
     # ── 5. 初始化 Agent 核心调度层 ──
     task_parser = TaskParser(model_provider=llm_provider)

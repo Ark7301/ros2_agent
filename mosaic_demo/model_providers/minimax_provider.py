@@ -19,10 +19,10 @@ from mosaic_demo.model_providers.minimax_client import MiniMaxClient, MiniMaxCli
 
 logger = logging.getLogger(__name__)
 
-_SYSTEM_PROMPT = (
+_BASE_SYSTEM_PROMPT = (
     "你是一个机器人任务调度助手。根据用户的自然语言指令，"
     "调用合适的工具来执行对应的机器人能力。"
-    "请始终通过 tool_use 返回结构化结果。"
+    "请始终通过 tool_use 返回结构化结果。\n\n"
 )
 
 # 多轮 tool call 最大循环次数，防止无限循环
@@ -32,9 +32,47 @@ _MAX_TOOL_CALL_ROUNDS = 5
 class MiniMaxProvider(ModelProvider):
     """基于 MiniMax Anthropic API 的 ModelProvider 实现"""
 
-    def __init__(self, client: MiniMaxClient, registry: CapabilityRegistry):
+    def __init__(
+        self,
+        client: MiniMaxClient,
+        registry: CapabilityRegistry,
+        location_service=None,
+    ):
         self._client = client
         self._registry = registry
+        self._location_service = location_service
+
+    def _build_system_prompt(self) -> str:
+        """动态构建 system prompt，注入当前可用的能力和资源信息
+
+        让 LLM 在推理时能感知系统已注册的能力边界和可用参数，
+        从而对模糊语义做精确关联（如"回去充电" → 充电桩）。
+        """
+        prompt = _BASE_SYSTEM_PROMPT
+
+        # 注入能力描述
+        cap_infos = self._registry.list_capabilities()
+        if cap_infos:
+            prompt += "## 当前可用的机器人能力（Skills）\n"
+            for cap in cap_infos:
+                intents_str = "、".join(cap.supported_intents)
+                prompt += f"- {cap.name}（意图: {intents_str}）: {cap.description}\n"
+            prompt += "\n"
+
+        # 注入可用地名列表
+        if self._location_service is not None:
+            locations = self._location_service.list_locations()
+            if locations:
+                names = "、".join(locations.keys())
+                prompt += (
+                    "## 已注册的地名列表\n"
+                    f"系统中已注册的地名有: {names}\n"
+                    '当用户提到与这些地名语义相关的表述时（如"回去充电"对应"充电桩"、"回家"对应"客厅"），'
+                    "请推理关联到最匹配的已注册地名，并使用该地名作为 target 参数。\n"
+                    "如果用户提到的地点确实无法关联到任何已注册地名，仍然使用用户原始表述。\n\n"
+                )
+
+        return prompt
 
     async def parse_task(self, context: TaskContext) -> TaskResult:
         """通过 Anthropic Tool Use 解析自然语言指令
@@ -45,6 +83,7 @@ class MiniMaxProvider(ModelProvider):
         """
         try:
             tools = self._build_tool_definitions()
+            system_prompt = self._build_system_prompt()
 
             messages: list[dict[str, Any]] = [
                 {
@@ -57,7 +96,7 @@ class MiniMaxProvider(ModelProvider):
             logger.info("📡 正在调用 MiniMax API (model=%s)...", self._client.model)
             response = await self._client.chat_completion(
                 messages=messages,
-                system=_SYSTEM_PROMPT,
+                system=system_prompt,
                 tools=tools if tools else None,
             )
 
@@ -99,7 +138,15 @@ class MiniMaxProvider(ModelProvider):
         return intents
 
     def _build_tool_definitions(self) -> list[dict[str, Any]]:
-        """生成 Anthropic 格式的工具定义"""
+        """生成 Anthropic 格式的工具定义，注入可用参数枚举值"""
+        # 构建 target 参数描述，包含可用地名
+        target_desc = "目标参数"
+        if self._location_service is not None:
+            locations = self._location_service.list_locations()
+            if locations:
+                names = "、".join(locations.keys())
+                target_desc = f"目标参数。对于导航类意图，必须使用已注册的地名之一: {names}。请根据用户语义推理最匹配的地名。"
+
         tools: list[dict[str, Any]] = []
         for cap_info in self._registry.list_capabilities():
             for intent in cap_info.supported_intents:
@@ -111,7 +158,7 @@ class MiniMaxProvider(ModelProvider):
                         "properties": {
                             "target": {
                                 "type": "string",
-                                "description": "目标参数",
+                                "description": target_desc,
                             }
                         },
                         "required": [],
