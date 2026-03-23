@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/gateway/session_manager.py
+# hypothesis_version: 6.151.9
+
+[300, 'closed', 'default', 'initializing', 'ready', 'running', 'suspended', 'waiting']

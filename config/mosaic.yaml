@@ -1,0 +1,122 @@
+# ============================================================
+# MOSAIC v2 统一配置文件
+# API 密钥通过 ${ENV_VAR} 引用环境变量，禁止硬编码
+# ============================================================
+
+# ── Gateway 网关配置 ──
+gateway:
+  host: "0.0.0.0"
+  port: 8765
+  max_concurrent_sessions: 10
+  idle_session_timeout_s: 300
+
+# ── Agent 配置 ──
+agents:
+  default:
+    provider: "minimax"
+    model: "MiniMax-Text-01"
+    context_engine: "sliding-window"
+    memory: "file-memory"
+    max_turn_iterations: 10
+    turn_timeout_s: 120
+    system_prompt: |
+      你是 MOSAIC 智能机器人助手，运行在一个具备物理执行能力的机器人平台上。
+      你拥有以下能力，必须通过调用对应的工具来执行用户指令：
+      - navigate_to: 导航到指定位置（如厨房、卧室、门口等）
+      - patrol: 按路径点列表巡逻
+      - rotate: 原地旋转指定角度
+      - stop: 紧急停止所有运动
+      - pick_up: 拿取/抓取指定物品
+      - hand_over: 将手中物品递交给用户
+      - operate_appliance: 操作家电设备（如启动咖啡机、开灯、开空调等）
+      - wait_appliance: 等待家电完成任务（如等咖啡做好）
+      当用户要求你去某个地方、拿东西、做咖啡、操作设备、巡逻、转身等涉及物理动作的指令时，
+      你必须调用对应的工具来执行，而不是说"我无法做到"。
+      你是一个有身体的机器人，不是纯文字聊天助手。
+
+      【重要：任务分解规则】
+      当用户给出包含多个步骤的复合指令时，你必须严格按照物理逻辑分解并依次执行每个子步骤。
+      例如"帮我去厕所拿个毛巾过来，然后去充电"的正确执行顺序是：
+      1. navigate_to 厕所（去物品所在位置）
+      2. pick_up 毛巾（拿取物品）
+      3. navigate_to 用户位置（回到用户身边）
+      4. hand_over 毛巾（递交物品给用户）
+      5. navigate_to 充电站（执行下一个任务）
+      绝对不能跳过中间步骤。"拿东西过来"意味着必须拿起物品、回到用户身边、递交物品，三步缺一不可。
+      再例如"帮我做杯咖啡送过来"的正确执行顺序是：
+      1. navigate_to 厨房（去咖啡机所在位置）
+      2. operate_appliance 咖啡机 启动（操作设备制作咖啡）
+      3. wait_appliance 咖啡机（等待咖啡制作完成）
+      4. pick_up 咖啡（拿起做好的咖啡）
+      5. navigate_to 用户位置（回到用户身边）
+      6. hand_over 咖啡（递交给用户）
+
+# ── 插件配置 ──
+plugins:
+  # 排他性 Slot（仅 memory 和 context-engine 使用）
+  slots:
+    memory: "file-memory"
+    context-engine: "sliding-window"
+
+  # Provider 配置（多 Provider 共存，通过 default 选择默认）
+  providers:
+    default: "minimax"
+    available:
+      - "minimax"
+      - "openai"
+      - "ollama"
+    minimax:
+      api_key: "${MINIMAX_API_KEY}"
+      model: "MiniMax-Text-01"
+      base_url: "https://api.minimax.chat/v1"
+    openai:
+      api_key: "${OPENAI_API_KEY}"
+      model: "gpt-4o"
+      base_url: "https://api.openai.com/v1"
+    ollama:
+      model: "llama3"
+      base_url: "http://localhost:11434"
+
+  # 记忆插件配置
+  memory:
+    active: "file-memory"
+    file-memory:
+      storage_dir: "data/memory"
+
+  # 上下文引擎插件配置
+  context_engine:
+    active: "sliding-window"
+    sliding-window:
+      max_tokens: 4096
+      overlap_tokens: 256
+
+# ── 通道配置 ──
+channels:
+  cli:
+    enabled: true
+    prompt: ">>> "
+  websocket:
+    enabled: true
+    port: 8766
+  ros2_topic:
+    enabled: true
+    subscribe_topic: "/user_command"
+    publish_topic: "/agent_response"
+
+# ── 节点层配置 ──
+nodes:
+  heartbeat_timeout_s: 30
+  auto_discovery: true
+
+# ── 路由配置 ──
+routing:
+  default_agent: "default"
+  bindings:
+    - agent_id: "navigation_agent"
+      match_type: "intent"
+      pattern: "navigate_.*|patrol"
+      priority: 1
+    - agent_id: "default"
+      match_type: "channel"
+      channel: "*"
+      priority: 99

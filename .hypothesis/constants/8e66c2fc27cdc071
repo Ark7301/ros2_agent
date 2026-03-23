@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/plugin_sdk/types.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.7, 4096, 'degraded', 'healthy', 'unhealthy']

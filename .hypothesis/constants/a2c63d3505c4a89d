@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/plugins/capabilities/navigation/__init__.py
+# hypothesis_version: 6.151.9
+
+[0.5, '0.1.0', 'MOSAIC', 'Nav2 导航能力，支持目标导航和巡逻', 'Navigation', 'array', 'boolean', 'capability', 'default', 'description', 'intent', 'items', 'name', 'navigate_to', 'navigation', 'number', 'object', 'parameters', 'patrol', 'properties', 'repeat', 'required', 'speed', 'string', 'target', 'type', 'waypoints', '导航到指定位置', '导航插件正常', '导航速度（0.0-1.0），默认 0.5', '巡逻路径点列表', '按路径点列表巡逻', '是否循环巡逻，默认 false', '目标位置名称']

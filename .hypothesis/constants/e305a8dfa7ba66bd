@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/runtime/turn_runner.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.1, 120, 1000, 4096, 'arguments', 'assistant', 'capability', 'content', 'context-engine', 'error', 'function', 'has_tool_calls', 'id', 'iteration', 'llm.after_call', 'llm.before_call', 'name', 'role', 'session_id', 'success', 'system', 'tool', 'tool_call_id', 'tool_calls', 'total_tokens', 'turn.end', 'turn.error', 'turn.start', 'turn_id', 'type', 'user', '{}']

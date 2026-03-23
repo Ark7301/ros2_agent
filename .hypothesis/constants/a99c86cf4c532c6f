@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/gateway/agent_router.py
+# hypothesis_version: 6.151.9
+
+['channel', 'default', 'intent', 'scene', 'session', 'session_binding']

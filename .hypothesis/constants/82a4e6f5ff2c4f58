@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/nodes/node_registry.py
+# hypothesis_version: 6.151.9
+
+['connected', 'disconnected', 'heartbeat_miss']

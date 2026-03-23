@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/plugin_sdk/registry.py
+# hypothesis_version: 6.151.9
+
+['-', '_', 'capabilities', 'capability', 'channel', 'channels', 'context-engine', 'context_engines', 'create_plugin', 'memory', 'plugins', 'provider', 'providers']

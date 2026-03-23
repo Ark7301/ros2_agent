@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/protocol/__init__.py
+# hypothesis_version: 6.151.9
+
+['CONFIG_CHANGED', 'ErrorCode', 'Event', 'EventHandler', 'EventPriority', 'INBOUND_MESSAGE', 'NODE_STATUS_CHANGED', 'OUTBOUND_MESSAGE', 'TOOL_EXECUTED', 'TURN_COMPLETE']
