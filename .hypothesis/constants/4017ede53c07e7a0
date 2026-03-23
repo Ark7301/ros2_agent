@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/core/event_bus.py
+# hypothesis_version: 6.151.9
+
+[0.5, 10000, '*', '.*']

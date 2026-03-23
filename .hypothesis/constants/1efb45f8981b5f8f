@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/plugins/memory/file_memory/__init__.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 1.5, 2.0, '0.1.0', 'File Memory', 'MOSAIC', 'file-memory', 'memory']

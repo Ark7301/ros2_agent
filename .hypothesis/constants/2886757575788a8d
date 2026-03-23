@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/click/_compat.py
+# hypothesis_version: 6.151.9
+
+[438, '-', 'APPENGINE_RUNTIME', 'Development/', 'GCC', 'O_BINARY', 'SERVER_SOFTWARE', '_AtomicFile', 'a', 'ascii', 'b', 'buffer', 'cygwin', 'encoding', 'errors', 'ipykernel.', 'nt', 'r', 'read1', 'readable', 'replace', 'seekable', 'stderr', 'stdin', 'stdout', 'strict', 'utf-8', 'w', 'win', 'writable', 'x']

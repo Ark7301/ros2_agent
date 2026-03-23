@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/plugins/providers/minimax/__init__.py
+# hypothesis_version: 6.151.9
+
+[60.0, 200, '0.1.0', 'Authorization', 'Content-Type', 'MINIMAX_API_BASE', 'MINIMAX_API_KEY', 'MOSAIC', 'MiniMax Provider', 'MiniMax-Text-01', 'POST', '[DONE]', 'application/json', 'arguments', 'choices', 'content', 'data: ', 'function', 'hi', 'id', 'max_tokens', 'message', 'messages', 'minimax', 'model', 'name', 'provider', 'role', 'stream', 'temperature', 'tool_calls', 'tools', 'usage', 'user']

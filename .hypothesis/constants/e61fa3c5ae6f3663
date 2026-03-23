@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/protocol/errors.py
+# hypothesis_version: 6.151.9
+
+['config_error', 'node_not_found', 'plugin_load_failed', 'plugin_not_found', 'provider_auth_failed', 'provider_error', 'session_closed', 'session_not_found', 'tool_not_found', 'turn_max_iterations', 'turn_timeout']

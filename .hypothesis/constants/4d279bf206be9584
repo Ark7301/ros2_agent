@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/protocol/messages.py
+# hypothesis_version: 6.151.9
+
+['channel.inbound', 'channel.outbound', 'config.changed', 'node.status_changed', 'tool.executed', 'turn.complete']

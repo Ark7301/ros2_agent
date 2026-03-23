@@ -1,0 +1,4 @@
+# file: /usr/lib/python3/dist-packages/click/_unicodefun.py
+# hypothesis_version: 6.151.9
+
+[', ', '-a', '.utf-8', '.utf8', 'LANG', 'LC_ALL', 'ascii', 'c.utf-8', 'c.utf8', 'locale', 'posix', 'replace']

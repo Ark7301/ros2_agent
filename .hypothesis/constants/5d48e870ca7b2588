@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/gateway/server.py
+# hypothesis_version: 6.151.9
+
+[120, 300, 'Channel 已停止: %s', 'Channel 已启动: %s', 'Gateway Server 已停止', 'Gateway Server 已启动', '__main__', 'agent_id', 'channel', 'channel_id', 'channels', 'config/mosaic.yaml', 'content', 'context-engine', 'default', 'enabled', 'file-memory', 'gateway', 'gateway.start', 'gateway.stop', 'match_type', 'memory', 'minimax', 'pattern', 'plugins', 'plugins.slots.memory', 'priority', 'routing.bindings', 'scene', 'session_id', 'sliding-window', 'unknown', '处理入站消息失败: %s']

@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/plugins/channels/cli/__init__.py
+# hypothesis_version: 6.151.9
+
+['0.1.0', '>>> ', 'CLI Channel', 'MOSAIC', 'channel', 'cli', 'exit', '再见！', '退出']

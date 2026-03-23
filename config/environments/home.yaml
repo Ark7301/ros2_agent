@@ -1,0 +1,108 @@
+# config/environments/home.yaml
+# 家庭环境场景图配置 — 定义房间、家具、物品及其关系
+# 用于初始化 SceneGraphManager，构建三层层次化场景图
+# 层次：Room → Furniture/Appliance → Object/Part
+
+environment:
+  name: "家庭环境"
+  version: "1.0"
+
+  # 房间定义
+  rooms:
+    - id: living_room
+      label: 客厅
+      position: [3.0, 2.0]
+      furniture:
+        - id: sofa
+          label: 沙发
+          position: [2.0, 1.0]
+        - id: coffee_table
+          label: 茶几
+          position: [3.0, 1.5]
+          objects:
+            - id: water_cup
+              label: 水杯
+              type: object
+              affordances: [graspable]
+              properties: {material: ceramic, weight_kg: 0.3}
+            - id: remote
+              label: 遥控器
+              type: object
+              affordances: [graspable]
+        - id: tv_cabinet
+          label: 电视柜
+          position: [4.0, 0.5]
+
+    - id: kitchen
+      label: 厨房
+      position: [7.0, 2.0]
+      furniture:
+        - id: counter
+          label: 料理台
+          position: [7.0, 1.0]
+          objects:
+            - id: coffee_machine
+              label: 咖啡机
+              type: appliance
+              state: {power: "off", mode: "idle"}
+              affordances: [operable]
+              parts:
+                - id: coffee_btn
+                  label: 启动按钮
+                  affordances: [pressable]
+            - id: toaster
+              label: 面包机
+              type: appliance
+              state: {power: "off"}
+              affordances: [operable]
+        - id: fridge
+          label: 冰箱
+          type: appliance
+          position: [8.0, 2.0]
+          state: {power: "on", temperature: "4°C"}
+          affordances: [openable]
+
+    - id: bedroom
+      label: 卧室
+      position: [3.0, 6.0]
+
+    - id: bathroom
+      label: 卫生间
+      position: [7.0, 6.0]
+      furniture:
+        - id: towel_rack
+          label: 毛巾架
+          objects:
+            - id: yellow_towel
+              label: 黄色毛巾
+              type: object
+              affordances: [graspable]
+
+    - id: entrance
+      label: 门口
+      position: [1.0, 0.0]
+
+    - id: charging_station
+      label: 充电站
+      position: [1.0, 2.0]
+
+  # 房间连通性（双向）
+  connections:
+    - [living_room, kitchen]
+    - [living_room, bedroom]
+    - [living_room, entrance]
+    - [kitchen, bathroom]
+    - [living_room, charging_station]
+
+  # 初始智能体状态
+  agents:
+    - id: robot
+      label: 机器人
+      at: living_room
+
+  # 初始人员位置
+  people:
+    - id: user
+      label: 用户
+      at: living_room
+      near: sofa

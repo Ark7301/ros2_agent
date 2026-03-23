@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/plugins/capabilities/motion/__init__.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.3, '0.1.0', 'MOSAIC', 'Motion', 'angle', 'capability', 'default', 'description', 'intent', 'motion', 'name', 'number', 'object', 'parameters', 'properties', 'required', 'rotate', 'speed', 'stop', 'type', '原地旋转指定角度', '已紧急停止所有运动', '旋转速度（rad/s），默认 0.3', '紧急停止所有运动', '运动控制插件正常', '运动控制能力，支持旋转和紧急停止']

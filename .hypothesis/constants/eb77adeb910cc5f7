@@ -1,0 +1,4 @@
+# file: /home/jijiking/ros2_agent/mosaic/core/hooks.py
+# hypothesis_version: 6.151.9
+
+[5.0, 100, 'config.reload', 'context.compact', 'context.overflow', 'gateway.start', 'gateway.stop', 'llm.after_call', 'llm.before_call', 'node.connect', 'node.disconnect', 'node.health_change', 'session.close', 'session.create', 'session.idle', 'tool.after_exec', 'tool.before_exec', 'tool.permission', 'turn.end', 'turn.error', 'turn.start']
