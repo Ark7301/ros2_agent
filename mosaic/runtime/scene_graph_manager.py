@@ -261,6 +261,132 @@ class SceneGraphManager:
             for effect in rule.effects:
                 apply_effect(self._graph, effect, params)
 
+    # ── 位置同步 ──
+
+    def update_agent_position(self, x: float, y: float) -> None:
+        """更新 agent 位置并重新计算所在房间
+
+        当房间发生切换时，移除旧 AT_Edge、创建新 AT_Edge，
+        并通过 HookManager 发布 scene.agent_moved 事件。
+        """
+        agent = self._graph.get_agent_node()
+        if not agent:
+            return
+        agent.position = (x, y)
+
+        # 最近邻匹配确定所在房间（优先使用 boundary_polygon）
+        new_room = self._find_room_for_position(x, y)
+        if not new_room:
+            return
+
+        old_room = self._graph.get_agent_location()
+        if old_room and old_room.node_id != new_room.node_id:
+            # 房间切换：移除旧 AT_Edge，创建新 AT_Edge
+            self._graph.remove_edges(
+                source_id=agent.node_id, edge_type=EdgeType.AT,
+            )
+            self._graph.add_edge(SceneEdge(
+                source_id=agent.node_id,
+                target_id=new_room.node_id,
+                edge_type=EdgeType.AT,
+            ))
+            # 通过 HookManager 发布房间切换事件
+            if self._hooks:
+                try:
+                    import asyncio
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(
+                        self._hooks.emit("scene.agent_moved", {
+                            "old_room": old_room.node_id,
+                            "new_room": new_room.node_id,
+                        })
+                    )
+                except RuntimeError:
+                    # 没有运行中的事件循环时忽略
+                    pass
+
+    def _find_room_for_position(
+        self, x: float, y: float,
+    ) -> SceneNode | None:
+        """根据坐标确定所在房间
+
+        优先使用 boundary_polygon 点包含测试，
+        回退到质心最近邻匹配。
+        """
+        rooms = self._graph.find_by_type(NodeType.ROOM)
+
+        # 优先：boundary_polygon 点包含测试
+        for room in rooms:
+            polygon = room.properties.get("boundary_polygon")
+            if polygon and self._point_in_polygon(x, y, polygon):
+                return room
+
+        # 回退：质心最近邻
+        best_room: SceneNode | None = None
+        best_dist = float("inf")
+        for room in rooms:
+            if room.position:
+                dx = x - room.position[0]
+                dy = y - room.position[1]
+                dist = (dx * dx + dy * dy) ** 0.5
+                if dist < best_dist:
+                    best_dist = dist
+                    best_room = room
+        return best_room
+
+    @staticmethod
+    def _point_in_polygon(
+        x: float, y: float, polygon: list[list[float]],
+    ) -> bool:
+        """射线法判断点是否在多边形内
+
+        从 (x, y) 向右发射水平射线，统计与多边形边的交点数，
+        奇数次交叉表示点在多边形内部。
+        """
+        n = len(polygon)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = polygon[i]
+            xj, yj = polygon[j]
+            if ((yi > y) != (yj > y)) and \
+               (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    # ── 房间拓扑合并 ──
+
+    def merge_room_topology(self, topology) -> None:
+        """将 MapAnalyzer 提取的房间拓扑合并到场景图
+
+        为每个 RoomCandidate 创建 ROOM 节点：
+        - position 设为质心世界坐标
+        - properties["boundary_polygon"] 存储边界多边形
+        为相邻房间对创建双向 REACHABLE 边。
+        """
+        for room in topology.rooms:
+            node = SceneNode(
+                node_id=room.room_id,
+                node_type=NodeType.ROOM,
+                label=room.room_id,
+                position=room.centroid_world,
+                properties={"boundary_polygon": room.boundary_polygon},
+            )
+            self._graph.add_node(node)
+
+        for room_a_id, room_b_id in topology.connections:
+            self._graph.add_edge(SceneEdge(
+                source_id=room_a_id,
+                target_id=room_b_id,
+                edge_type=EdgeType.REACHABLE,
+            ))
+            self._graph.add_edge(SceneEdge(
+                source_id=room_b_id,
+                target_id=room_a_id,
+                edge_type=EdgeType.REACHABLE,
+            ))
+
     # ── 快照 ──
 
     def snapshot(self) -> None:

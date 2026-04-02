@@ -1,0 +1,64 @@
+# SLAM Toolbox 参数 — Isaac Sim + Nova Carter
+# /clock 由 isaac_ros_bridge.py 提供
+#
+# v2 修改：
+#   - 适配单帧 scan（不再累积，每帧 ~120°，有大量 inf ray）
+#   - 降低 minimum_travel_heading 避免旋转时频繁触发 scan 匹配
+#   - 提高 scan 匹配和回环检测阈值，减少误匹配
+
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: None
+
+    scan_topic: /scan
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+
+    # 地图分辨率
+    resolution: 0.05
+    max_laser_range: 20.0
+
+    # ── 更新策略（360° 累积 scan）──
+    throttle_scans: 1
+    minimum_travel_distance: 0.2
+    minimum_travel_heading: 0.15
+    map_update_interval: 2.0
+    minimum_time_interval: 0.3
+
+    # ── scan 匹配参数（360° scan，匹配质量好）──
+    use_scan_matching: true
+    use_scan_barycenter: true
+    scan_buffer_size: 30
+    scan_buffer_maximum_scan_distance: 15.0
+    link_match_minimum_response_fine: 0.4
+    link_scan_maximum_distance: 2.0
+    use_response_expansion: true
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    # ── 回环检测（保守策略）──
+    loop_search_maximum_distance: 3.0
+    do_loop_closing: true
+    loop_match_minimum_chain_size: 15
+    loop_match_maximum_variance_coarse: 2.0
+    loop_match_minimum_response_coarse: 0.65
+    loop_match_minimum_response_fine: 0.7
+
+    # ── TF 容忍度 ──
+    transform_timeout: 1.0
+    tf_buffer_duration: 30.0
+    transform_publish_period: 0.02
+
+    mode: mapping
+    debug_logging: false
+    map_file_name: ""
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true

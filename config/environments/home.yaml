@@ -7,18 +7,18 @@ environment:
   name: "家庭环境"
   version: "1.0"
 
-  # 房间定义
+  # 房间定义（坐标来自 InteriorAgent kujiale_0021/rooms.json 中心点）
   rooms:
     - id: living_room
       label: 客厅
-      position: [3.0, 2.0]
+      position: [7.93, -0.39]
       furniture:
         - id: sofa
           label: 沙发
-          position: [2.0, 1.0]
+          position: [6.0, -1.5]
         - id: coffee_table
           label: 茶几
-          position: [3.0, 1.5]
+          position: [7.0, -1.0]
           objects:
             - id: water_cup
               label: 水杯
@@ -31,15 +31,15 @@ environment:
               affordances: [graspable]
         - id: tv_cabinet
           label: 电视柜
-          position: [4.0, 0.5]
+          position: [9.0, -2.0]
 
     - id: kitchen
       label: 厨房
-      position: [7.0, 2.0]
+      position: [12.97, -0.75]
       furniture:
         - id: counter
           label: 料理台
-          position: [7.0, 1.0]
+          position: [13.0, -0.5]
           objects:
             - id: coffee_machine
               label: 咖啡机
@@ -58,17 +58,17 @@ environment:
         - id: fridge
           label: 冰箱
           type: appliance
-          position: [8.0, 2.0]
+          position: [14.0, -1.0]
           state: {power: "on", temperature: "4°C"}
           affordances: [openable]
 
     - id: bedroom
       label: 卧室
-      position: [3.0, 6.0]
+      position: [5.20, 2.74]
 
     - id: bathroom
       label: 卫生间
-      position: [7.0, 6.0]
+      position: [13.74, -3.40]
       furniture:
         - id: towel_rack
           label: 毛巾架
@@ -78,19 +78,19 @@ environment:
               type: object
               affordances: [graspable]
 
-    - id: entrance
-      label: 门口
-      position: [1.0, 0.0]
+    - id: balcony
+      label: 阳台
+      position: [1.15, -1.77]
 
     - id: charging_station
       label: 充电站
-      position: [1.0, 2.0]
+      position: [7.93, -0.39]  # 暂放客厅区域，待 Isaac Sim 中标定
 
   # 房间连通性（双向）
   connections:
     - [living_room, kitchen]
     - [living_room, bedroom]
-    - [living_room, entrance]
+    - [living_room, balcony]
     - [kitchen, bathroom]
     - [living_room, charging_station]
 

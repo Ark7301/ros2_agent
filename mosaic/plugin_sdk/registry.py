@@ -22,27 +22,37 @@ class PluginRegistry:
         self._factories: dict[str, PluginFactory] = {}       # plugin_id → 工厂函数
         self._instances: dict[str, Any] = {}                  # plugin_id → 缓存实例
         self._kind_index: dict[str, list[str]] = {}           # kind → [plugin_id]
+        self._factory_kwargs: dict[str, dict[str, Any]] = {} # plugin_id → 工厂参数
         # 排他性 Slot（仅 memory 和 context-engine）
         self._slots: dict[str, str] = {}                      # slot_key → active_plugin_id
         # Provider 注册表（非排他，多 Provider 共存）
         self._default_provider: str = ""
 
-    def register(self, plugin_id: str, factory: PluginFactory, kind: str):
-        """注册插件工厂函数并建立 kind 索引"""
+    def register(self, plugin_id: str, factory: PluginFactory, kind: str,
+                 factory_kwargs: dict[str, Any] | None = None):
+        """注册插件工厂函数并建立 kind 索引，可选附带工厂参数"""
         self._factories[plugin_id] = factory
         self._kind_index.setdefault(kind, []).append(plugin_id)
+        if factory_kwargs:
+            self._factory_kwargs[plugin_id] = factory_kwargs
+
+    def configure_plugin(self, plugin_id: str, **kwargs) -> None:
+        """在插件发现后、实例化前注入额外工厂参数"""
+        self._factory_kwargs.setdefault(plugin_id, {}).update(kwargs)
 
     def resolve(self, plugin_id: str) -> Any:
         """解析并实例化插件（懒加载 + 缓存，单例语义）
 
         首次调用时通过工厂函数创建实例并缓存，
         后续调用直接返回缓存的同一实例。
+        若有已注册的 factory_kwargs，则作为关键字参数传入工厂函数。
         """
         if plugin_id not in self._instances:
             factory = self._factories.get(plugin_id)
             if not factory:
                 raise KeyError(f"插件未注册: {plugin_id}")
-            self._instances[plugin_id] = factory()
+            kwargs = self._factory_kwargs.get(plugin_id, {})
+            self._instances[plugin_id] = factory(**kwargs)
         return self._instances[plugin_id]
 
     def set_slot(self, slot_key: str, plugin_id: str):

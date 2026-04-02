@@ -13,6 +13,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
+import yaml
+
 from mosaic.core.config import ConfigManager
 from mosaic.core.event_bus import EventBus
 from mosaic.core.hooks import HookManager
@@ -20,6 +22,15 @@ from mosaic.plugin_sdk.registry import PluginRegistry
 from mosaic.gateway.session_manager import SessionManager
 from mosaic.gateway.agent_router import AgentRouter, RouteBinding
 from mosaic.runtime.turn_runner import TurnRunner
+from mosaic.runtime.scene_graph_manager import SceneGraphManager
+from mosaic.runtime.spatial_provider import SpatialProvider
+from mosaic.runtime.world_state_manager import (
+    WorkingMemory, SemanticMemory, EpisodicMemory, WorldStateManager,
+)
+from mosaic.runtime.map_analyzer import MapAnalyzer
+from mosaic.runtime.slam_map_detector import SlamMapDetector
+from mosaic.runtime.scene_analyzer import SceneAnalyzer
+from mosaic.runtime.scene_graph_builder import SceneGraphBuilder
 from mosaic.protocol.events import Event, EventPriority
 from mosaic.protocol.messages import INBOUND_MESSAGE, OUTBOUND_MESSAGE
 from mosaic.plugin_sdk.types import OutboundMessage
@@ -83,6 +94,12 @@ class GatewayServer:
             ),
         )
 
+        # ── 6. 初始化场景图管理器 ──
+        self._scene_graph_mgr = self._init_scene_graph()
+
+        # ── 6.5 初始化 ARIA WorldStateManager ──
+        self._world_state_mgr = self._init_world_state_manager()
+
         self._turn_runner = TurnRunner(
             registry=self._registry,
             event_bus=self._event_bus,
@@ -96,7 +113,31 @@ class GatewayServer:
             system_prompt=self._config.get(
                 "agents.default.system_prompt", "",
             ),
+            scene_graph_mgr=self._scene_graph_mgr,
         )
+
+        # ── 7. 根据 ROS2 配置注入 SpatialProvider ──
+        if self._scene_graph_mgr and self._config.get("ros2.enabled", False):
+            try:
+                sp = SpatialProvider(self._scene_graph_mgr.get_full_graph())
+                self._registry.configure_plugin(
+                    "navigation", spatial_provider=sp,
+                )
+                logger.info("SpatialProvider 已注入 navigation 插件")
+            except Exception as e:
+                logger.warning("SpatialProvider 注入失败: %s", e)
+
+        # ── 7.5 连接 SensorBridge 位置回调到 WorldStateManager ──
+        # 注意：SensorBridge 是 ROS2 节点，仅在 ROS2 环境中可用
+        # 此处预注册回调工厂，实际连接在 NodeRegistry 创建 SensorBridge 后执行
+        self._sensor_bridge_position_callback = None
+        if self._world_state_mgr:
+            self._sensor_bridge_position_callback = self._world_state_mgr.update_position
+
+        # ── 8. 集成 MapAnalyzer 和 VLM 流水线（条件启用）──
+        self._scene_graph_builder = None
+        if self._scene_graph_mgr:
+            self._init_map_and_vlm_pipeline()
 
         # EventBus 事件循环任务引用
         self._bus_task: asyncio.Task | None = None
@@ -115,6 +156,120 @@ class GatewayServer:
                 priority=b.get("priority", 99),
             ))
         return bindings
+
+    def _init_scene_graph(self) -> SceneGraphManager | None:
+        """初始化场景图管理器，失败时降级为 None"""
+        try:
+            env_path = self._config.get(
+                "scene_graph.environment_config",
+                "config/environments/home.yaml",
+            )
+            with open(env_path) as f:
+                env_config = yaml.safe_load(f)
+            sgm = SceneGraphManager(hooks=self._hooks)
+            sgm.initialize_from_config(env_config)
+            logger.info("场景图初始化完成: %s", env_path)
+            return sgm
+        except Exception as e:
+            logger.error("场景图初始化失败，降级为无场景图模式: %s", e)
+            return None
+
+    def _init_world_state_manager(self) -> WorldStateManager | None:
+        """初始化 ARIA WorldStateManager，失败时降级为 None
+
+        创建三层记忆（WorkingMemory + SemanticMemory + EpisodicMemory），
+        注册为 memory Slot 的新 Provider，保持 MemoryPlugin 接口向后兼容。
+        """
+        if not self._scene_graph_mgr:
+            logger.info("无场景图管理器，跳过 WorldStateManager 初始化")
+            return None
+
+        try:
+            working = WorkingMemory()
+            semantic = SemanticMemory(self._scene_graph_mgr)
+
+            time_decay = self._config.get(
+                "aria.episodic.time_decay_factor", 0.95,
+            )
+            episodic = EpisodicMemory(time_decay_factor=time_decay)
+
+            wsm = WorldStateManager(
+                working=working,
+                semantic=semantic,
+                episodic=episodic,
+            )
+
+            # 注册为 memory Slot 的新 Provider（替代 file-memory）
+            self._registry.register(
+                "world-state",
+                lambda: wsm,
+                "memory",
+            )
+            self._registry.set_slot("memory", "world-state")
+
+            logger.info("ARIA WorldStateManager 初始化完成")
+            return wsm
+        except Exception as e:
+            logger.error("WorldStateManager 初始化失败，保持原有 memory 插件: %s", e)
+            return None
+
+    def _init_map_and_vlm_pipeline(self) -> None:
+        """条件启用 MapAnalyzer 和 VLM 语义标注流水线
+
+        - scene_graph.slam_map 存在时：加载 SLAM 地图并合并房间拓扑
+        - scene_graph.auto_build 为 true 时：创建 SceneAnalyzer + SceneGraphBuilder
+        - 任一组件失败时降级为 YAML 配置初始化（已在 _init_scene_graph 完成）
+        """
+        # ── SLAM 地图自动检测与加载 ──
+        slam_map_path = self._config.get("scene_graph.slam_map", "")
+        default_map_dir = self._config.get(
+            "scene_graph.slam_map_dir", "~/mosaic_maps",
+        )
+
+        # 使用 SlamMapDetector 自动检测可用地图
+        detector = SlamMapDetector(default_map_dir=default_map_dir)
+        detected_path = detector.detect(configured_path=slam_map_path)
+
+        if detected_path:
+            try:
+                analyzer = MapAnalyzer()
+                analyzer.load_map(detected_path)
+                topology = analyzer.extract_room_topology()
+                self._scene_graph_mgr.merge_room_topology(topology)
+                logger.info(
+                    "SLAM 地图已加载: %s（%d 房间, %d 连接）",
+                    detected_path,
+                    len(topology.rooms),
+                    len(topology.connections),
+                )
+            except Exception as e:
+                logger.error("SLAM 地图加载失败，保持 YAML 配置: %s", e)
+        else:
+            logger.info("未检测到 SLAM 地图，使用 YAML 静态场景图")
+
+        # ── VLM 自动构建流水线 ──
+        auto_build = self._config.get("scene_graph.auto_build", False)
+        if auto_build:
+            try:
+                merge_dist = self._config.get("vlm.merge_distance_m", 0.5)
+                self._scene_graph_builder = SceneGraphBuilder(
+                    scene_graph_mgr=self._scene_graph_mgr,
+                    hooks=self._hooks,
+                    merge_distance_m=merge_dist,
+                )
+
+                # 创建 SceneAnalyzer
+                self._scene_analyzer = SceneAnalyzer(
+                    backend=self._config.get("vlm.backend", "gpt-4v"),
+                    api_key=self._config.get("vlm.api_key", ""),
+                    base_url=self._config.get(
+                        "vlm.base_url", "https://api.openai.com/v1",
+                    ),
+                )
+                logger.info("VLM 语义标注流水线已启用")
+            except Exception as e:
+                logger.error("VLM 流水线初始化失败，降级为静态场景图: %s", e)
+                self._scene_graph_builder = None
 
     async def start(self) -> None:
         """启动 Gateway Server
@@ -330,6 +485,10 @@ class GatewayServer:
     @property
     def turn_runner(self) -> TurnRunner:
         return self._turn_runner
+
+    @property
+    def world_state_manager(self) -> WorldStateManager | None:
+        return self._world_state_mgr
 
 
 async def run_gateway(config_path: str = "config/mosaic.yaml") -> None:

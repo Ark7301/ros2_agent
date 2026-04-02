@@ -108,6 +108,65 @@ nodes:
   heartbeat_timeout_s: 30
   auto_discovery: true
 
+# ── ROS2 桥接配置 ──
+ros2:
+  enabled: true
+  bridge:
+    executor_threads: 4
+    use_sim_time: true
+  sensors:
+    lidar:
+      topic: "/scan"
+      enabled: true
+    odometry:
+      topic: "/odom"
+      enabled: true
+    camera:
+      topic: "/camera/image_raw"
+      enabled: false  # Phase 4 启用
+  navigation:
+    action_server: "/navigate_to_pose"
+    pose_topic: "/amcl_pose"
+    timeout_s: 120
+
+# ── 场景图配置 ──
+scene_graph:
+  environment_config: "config/environments/home.yaml"
+  slam_map: "~/mosaic_maps/house_map.yaml"   # SLAM 地图路径（留空则跳过）
+  slam_map_dir: "~/mosaic_maps"              # SLAM 地图扫描目录
+  auto_build: false                          # 是否启用 VLM 自动构建场景图
+
+# ── Nav2 导航栈配置 ──
+nav2:
+  params_dir: "config/nav2"                  # Nav2 参数文件目录
+
+# ── VLM 配置 ──
+vlm:
+  backend: "gpt-4v"                          # gpt-4v | open-vlm
+  api_key: "${VLM_API_KEY}"
+  base_url: "https://api.openai.com/v1"
+  sample_interval_s: 2.0                     # 图像采样间隔（秒）
+  merge_distance_m: 0.5                      # 节点去重距离阈值（米）
+
+# ── ARIA 记忆配置 ──
+aria:
+  episodic:
+    max_episodes: 1000                       # 最大情景记忆条数
+    time_decay_factor: 0.95                  # 时间衰减因子
+  semantic:
+    vector_store: "in-memory"                # in-memory | faiss
+    embedding_model: "text-embedding-3-small"
+
+# ── 仿真环境配置 ──
+simulation:
+  platform: "isaac_sim"  # isaac_sim | mock
+  scene_path: "~/isaac_sim_assets/InteriorAgent/kujiale_0021/kujiale_0021.usda"
+  robot:
+    model: "nova_carter"
+    usd_path: "/Isaac/Robots/NVIDIA/NovaCarter/nova_carter.usd"
+    initial_position: [7.93, -0.39, 0.0]  # 客厅中心
+  map_file: "~/mosaic_house_map.yaml"
+
 # ── 路由配置 ──
 routing:
   default_agent: "default"
