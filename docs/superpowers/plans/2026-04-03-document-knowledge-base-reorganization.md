@@ -1,5 +1,11 @@
 # Document Knowledge-Base Reorganization Implementation Plan
 
+- title: Document Knowledge-Base Reorganization Implementation Plan
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, plan, knowledge-base, migration
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reorganize the repository documentation into a durable dual-track knowledge base with clear developer and research paths, consistent naming, explicit indexes, and no parallel doc entry points.

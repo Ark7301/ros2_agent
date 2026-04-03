@@ -273,7 +273,7 @@ class TurnEndContext(TypedDict):
 
 **3. 你的团队和论文背景**
 
-从文件结构看（`外文翻译-SayCan.md`、`论文素材-参考文献调研清单.md`、`Do as I can.md`），这是一个学术/研究项目。Python 是机器人学术界的通用语言，论文中的代码示例、开源实现几乎都是 Python。用 TypeScript 会增加与学术社区对接的摩擦。
+从当前文档结构看（`docs/research/papers/saycan-translation.md`、`docs/research/references/bibliography-survey-index.md`、`docs/archive/do-as-i-can.md`），这是一个学术/研究项目。Python 是机器人学术界的通用语言，论文中的代码示例、开源实现几乎都是 Python。用 TypeScript 会增加与学术社区对接的摩擦。
 
 **4. 当前代码质量已经很好**
 
