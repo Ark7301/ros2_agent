@@ -1,3 +1,9 @@
+- title: Scene Graph Integration Testing Guide
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, runbook, scene-graph
+
 # 场景图集成 — 用户仿真体验测试指南
 
 模拟真实用户通过自然语言与 MOSAIC 交互，验证场景图集成后的端到端体验效果。

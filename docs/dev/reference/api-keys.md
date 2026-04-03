@@ -1,3 +1,9 @@
+- title: API Keys Reference
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, reference, api
+
 # MiniMax API 配置
 
 ## API Key

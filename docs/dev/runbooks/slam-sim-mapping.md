@@ -1,3 +1,9 @@
+- title: SLAM Simulation Mapping Runbook
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, runbook, slam
+
 # Isaac Sim 仿真导航操作指南
 
 ## 前置条件

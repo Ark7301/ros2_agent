@@ -1,3 +1,9 @@
+- title: Auto Mapping Improvement Plan
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, architecture, mapping
+
 # 自动建图方案改进计划
 
 ## 现状问题

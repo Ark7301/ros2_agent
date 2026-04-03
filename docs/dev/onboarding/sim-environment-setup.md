@@ -1,3 +1,9 @@
+- title: MOSAIC Simulation Environment Setup
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, onboarding, simulation
+
 # MOSAIC 仿真环境搭建指南 — NVIDIA Isaac Sim
 
 > 目标：在 NVIDIA Isaac Sim 中验证 MOSAIC 场景图 + ARIA + TurnRunner 的完整管道。

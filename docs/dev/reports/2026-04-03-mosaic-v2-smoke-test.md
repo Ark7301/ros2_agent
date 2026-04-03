@@ -1,3 +1,9 @@
+- title: MOSAIC v2 Smoke Test Report
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, report, smoke-test
+
 # MOSAIC v2 冒烟测试报告
 
 | 项目 | 值 |

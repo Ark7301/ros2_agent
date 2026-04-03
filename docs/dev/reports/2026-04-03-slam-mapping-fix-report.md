@@ -1,3 +1,9 @@
+- title: SLAM Mapping Fix Report
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, dev, report, slam
+
 # SLAM 建图问题修复报告
 
 ## 问题现象
