@@ -1,3 +1,9 @@
+- title: Do As I Can
+- status: archived
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, archive, history
+
 Do As I Can, Not As I Say: Grounding Language in Robotic Affordances
   Michael Ahn∗, Anthony Brohan , Noah Brown∗, Yevgen Chebotar , Omar Cortes , Byron David ,
 Chelsea Finn∗, Chuyuan Fu , Keerthana Gopalakrishnan , Karol Hausman , Alex Herzog
