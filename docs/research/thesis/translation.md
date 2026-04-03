@@ -1,3 +1,10 @@
+- title: Thesis Translation
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, thesis, translation
+- source_type: thesis
+
 # 外文翻译
 
 ## 原文信息

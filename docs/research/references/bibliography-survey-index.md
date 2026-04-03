@@ -1,3 +1,10 @@
+- title: Bibliography Survey Index
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, bibliography
+- source_type: survey
+
 # 参考文献调研清单
 
 > 课题：面向 ROS 2 架构的 AI Agent 机器人任务调度系统设计与实现

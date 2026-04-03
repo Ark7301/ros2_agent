@@ -1,3 +1,10 @@
+- title: Thesis Proposal
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, thesis, proposal
+- source_type: thesis
+
 # 毕业设计（论文）开题报告
 
 ## 一、课题基本信息

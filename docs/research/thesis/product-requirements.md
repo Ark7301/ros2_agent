@@ -1,3 +1,10 @@
+- title: Product Requirements
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, thesis, requirements
+- source_type: thesis
+
 # 产品需求设计文档
 
 ## 面向 ROS 2 架构的 AI Agent 机器人任务调度系统

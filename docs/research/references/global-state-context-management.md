@@ -1,3 +1,10 @@
+- title: Global State Context Management
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, context
+- source_type: note
+
 # 论文素材：机器人全局状态上下文管理方案调研
 
 ## 1. 问题定义

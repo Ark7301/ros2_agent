@@ -1,3 +1,10 @@
+- title: Literature Review
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, thesis, literature-review
+- source_type: thesis
+
 # 文献综述
 
 ## 面向 ROS 2 架构的 AI Agent 机器人任务调度系统设计与实现

@@ -1,3 +1,10 @@
+- title: Humanoid Last Mile Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, humanoid
+- source_type: note
+
 # 人形机器人"最后一步"实现技术深度调研
 
 > 以"做咖啡"为典型场景，分析人形机器人在非结构化环境中完成复杂操作任务的技术路径

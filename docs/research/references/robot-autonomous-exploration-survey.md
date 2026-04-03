@@ -1,3 +1,10 @@
+- title: Robot Autonomous Exploration Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, exploration
+- source_type: note
+
 # 机器人自主探索与环境理解前沿方案调研
 
 ## 研究背景

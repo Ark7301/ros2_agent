@@ -1,3 +1,10 @@
+- title: Project Value And Scenarios
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, strategy
+- source_type: note
+
 # 论文素材：项目价值定位与应用场景分析
 
 > 本文档为毕业论文写作提供素材，涵盖研究背景中的行业痛点分析、系统价值定位、典型应用场景、与现有工作的对比。可直接融入论文的"第一章 绪论"和"第二章 相关技术与研究现状"。

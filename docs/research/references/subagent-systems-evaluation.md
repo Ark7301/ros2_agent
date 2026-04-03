@@ -1,3 +1,10 @@
+- title: Subagent Systems Evaluation
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, subagent
+- source_type: note
+
 # 论文素材：SubAgent 技术深度调研与 MOSAIC 系统适用性评估
 
 > 本文档为毕业论文写作提供素材，涵盖 SubAgent/多智能体层级架构的技术现状、机器人领域的层级化任务分解研究、以及 MOSAIC 系统中 SubAgent 机制的设计定位与评估。可融入论文的"第二章 相关技术与研究现状"和"第三章 系统设计"。

@@ -1,3 +1,10 @@
+- title: Agent Loop Evolution
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, agent-loop
+- source_type: note
+
 # 论文素材：从 Function Calling 到 Agent Loop — AI Agent 任务调度技术演进研究
 
 > 本文档为毕业论文写作提供素材，涵盖 LLM 工具调用范式的技术演进、Agent Loop 机制分析、机器人领域的闭环规划研究、以及本系统的技术路线定位。可融入论文的"第二章 相关技术与研究现状"和"第三章 系统设计"。

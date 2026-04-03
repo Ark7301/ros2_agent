@@ -1,3 +1,10 @@
+- title: World Models VLA VLN Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, world-models
+- source_type: note
+
 # 世界模型（World Model）与 VLA/VLN 技术调研
 
 > 调研时间：2026年2月  

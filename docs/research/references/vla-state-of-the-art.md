@@ -1,3 +1,10 @@
+- title: VLA State Of The Art
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, vla
+- source_type: note
+
 # VLA（Vision-Language-Action）技术研究现状深度调研
 
 > 调研时间：2026年2月 | 覆盖2023-2026年VLA领域核心进展

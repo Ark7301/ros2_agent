@@ -1,3 +1,10 @@
+- title: Embodied Agent Systems Comparison
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, embodied-agent
+- source_type: note
+
 # 论文素材：EmbodiedAgent 技术方案深度分析与 MOSAIC 系统对比
 
 > 本文档深度剖析 EmbodiedAgent（arXiv:2504.10030, 2025）的技术方案，并与 MOSAIC 系统及同期相关工作进行系统性对比。可融入论文的"第二章 相关技术与研究现状"和"第三章 系统设计"中的技术路线论证部分。

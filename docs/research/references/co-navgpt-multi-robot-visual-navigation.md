@@ -1,3 +1,10 @@
+- title: Co-NavGPT Multi Robot Visual Navigation
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, references, navigation
+- source_type: note
+
 # Co-NavGPT: 基于视觉语言模型的多机器人协作视觉语义导航
 
 > 来源: [Co-NavGPT: Multi-Robot Cooperative Visual Semantic Navigation Using Vision Language Models](https://arxiv.org/html/2310.07937v3)

@@ -1,3 +1,10 @@
+- title: System Technical Design
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, thesis, system-design
+- source_type: thesis
+
 # MOSAIC 系统技术设计方案
 
 > **MOSAIC** — Modular Orchestration System for Agent-driven Intelligent Control
