@@ -1,3 +1,10 @@
+- title: Scene Graph Implementation Examples
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, scene-graph
+- source_type: survey
+
 # MOSAIC 场景图实现示例调研：开源项目代码级分析
 
 > 本文调研 10+ 个开源项目的场景图实现，提取可直接复用的数据结构、序列化格式、

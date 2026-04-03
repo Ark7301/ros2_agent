@@ -1,3 +1,10 @@
+- title: How LLMs Understand The Physical World
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, directions, llm
+- source_type: note
+
 # MOSAIC 核心议题：如何使 LLM 理解物理世界
 
 > LLM 天生是语言的产物，不是物理世界的产物。

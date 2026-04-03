@@ -1,3 +1,10 @@
+- title: MOSAIC v2 Frontier Architecture
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, architecture
+- source_type: survey
+
 # MOSAIC v2 — 前沿架构全面重构方案
 
 > 基于 OpenClaw 深度调研 + 2026 Agent 领域最新范式

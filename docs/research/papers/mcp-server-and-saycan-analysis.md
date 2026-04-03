@@ -1,3 +1,10 @@
+- title: MCP Server And SayCan Analysis
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, paper, saycan
+- source_type: paper
+
 # MOSAIC MCP Server 方案深度分析：回溯 SayCan 设计哲学
 
 > 从 SayCan 的 affordance grounding 核心思想出发，分析方案 D（MCP Server 包装）的细粒度架构问题

@@ -1,3 +1,10 @@
+- title: OpenClaw Analysis
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, openclaw
+- source_type: survey
+
 # MOSAIC 借鉴 OpenClaw 深度分析报告
 
 > 基于两个代码库的完整架构对比，分析 MOSAIC 尚可借鉴的方向 + Python vs TypeScript 技术栈决策

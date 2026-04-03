@@ -1,3 +1,10 @@
+- title: OpenClaw To MOSAIC Architecture Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, architecture
+- source_type: survey
+
 # OpenClaw 技术调研 → MOSAIC 架构优化方案
 
 ## 一、OpenClaw 核心架构概览

@@ -1,3 +1,10 @@
+- title: Embodied Agent vs MCP
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, directions, mcp
+- source_type: note
+
 # MOSAIC 超越 MCP：具身智能体与工具调用协议的本质差异评估
 
 > 重新审视 MOSAIC 的定位——它不是一个可以被 MCP 包装的工具集合，

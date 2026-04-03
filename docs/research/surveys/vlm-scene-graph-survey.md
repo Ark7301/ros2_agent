@@ -1,3 +1,10 @@
+- title: VLM Scene Graph Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, vlm
+- source_type: survey
+
 # VLM 驱动场景图构建 — 前沿方案调研
 
 ## 核心问题

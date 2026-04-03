@@ -1,3 +1,10 @@
+- title: Python Core And TypeScript Orchestration
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, architecture
+- source_type: survey
+
 # MOSAIC 混合架构方案分析：Python 核心 + TypeScript Agent 调度层
 
 > 分析将 MOSAIC 拆分为 Python 机器人执行层 + TypeScript Agent 调度层的合理性

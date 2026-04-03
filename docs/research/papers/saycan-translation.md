@@ -1,3 +1,10 @@
+- title: SayCan Translation
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, paper, translation
+- source_type: paper
+
 # 外文翻译 - SayCan
 
 ## 原文信息

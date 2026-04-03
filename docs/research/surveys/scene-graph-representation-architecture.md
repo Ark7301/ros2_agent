@@ -1,3 +1,10 @@
+- title: Scene Graph Representation Architecture
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, scene-graph
+- source_type: survey
+
 # MOSAIC 场景图表征架构规划：从文本到结构化世界理解
 
 > 场景图是具身智能体理解物理世界的"结构化语言"。

@@ -1,3 +1,10 @@
+- title: Auto Mapping Open Source Survey
+- status: active
+- owner: repository-maintainers
+- updated: 2026-04-03
+- tags: docs, research, survey, mapping
+- source_type: survey
+
 # 自动场景建图开源方案调研
 
 调研目标：为 MOSAIC 的 SLAM → 场景图自动构建链路选择最合适的开源方案。
