@@ -9,7 +9,7 @@
 ## API Key
 
 ```
-sk-api-iX71Adv4hJbXZigv29nYEYuI9_hVKCPgGDI7aj0q2x7zXnctmG1q2KdYqhfw7ifjKPnsuFCiY7vuQFzzLKAxHWWu0tnpwe8RdqsdEXnBgmDp9yYvf61XSeE
+sk-api-REDACTED
 ```
 
 ## 接入信息
