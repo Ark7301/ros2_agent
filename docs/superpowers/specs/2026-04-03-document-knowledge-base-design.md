@@ -194,9 +194,9 @@ docs/
 | `docs/SLAM仿真建图操作指南.md` | `docs/dev/runbooks/slam-sim-mapping.md` |
 | `docs/场景图集成-体验测试指南.md` | `docs/dev/runbooks/scene-graph-integration-testing.md` |
 | `docs/API 文档/API-KEY.md` | `docs/dev/reference/api-keys.md` |
-| `docs/MOSAIC-v2-冒烟测试报告.md` | `docs/dev/reports/mosaic-v2-smoke-test.md` |
-| `scripts/docs/SLAM建图问题修复报告.md` | `docs/dev/reports/slam-mapping-fix-report.md` |
-| `scripts/docs/自动建图方案改进计划.md` | `docs/dev/architecture/auto-mapping-improvement-plan.md` |
+| `docs/MOSAIC-v2-冒烟测试报告.md` | `docs/dev/reports/2026-04-03-mosaic-v2-smoke-test.md` |
+| `scripts/docs/SLAM建图问题修复报告.md` | `docs/dev/reports/2026-04-03-slam-mapping-fix-report.md` |
+| `scripts/docs/自动建图方案改进计划.md` | `docs/dev/architecture/2026-03-11-auto-mapping-improvement-plan.md` |
 
 ### 9.2 迁入 `docs/research/`
 
