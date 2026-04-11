@@ -22,6 +22,8 @@ This section contains material that directly helps contributors set up, run, con
 
 - [Simulation environment setup](onboarding/sim-environment-setup.md)
 - [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md)
+- [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md)
+- [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md)
 - [SLAM simulation mapping](runbooks/slam-sim-mapping.md)
 - [Scene graph integration testing](runbooks/scene-graph-integration-testing.md)
 - [API keys reference](reference/api-keys.md)
@@ -31,9 +33,11 @@ This section contains material that directly helps contributors set up, run, con
 ## Reading Order
 
 1. Read [Simulation environment setup](onboarding/sim-environment-setup.md) to get the environment running.
-2. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for operational workflows.
-3. Consult [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md) for implementation context.
-4. Use [API keys reference](reference/api-keys.md) and the reports section as supporting reference and verification material.
+2. Consult [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md) for the current system judgment.
+3. Read [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md) for the management-facing next-stage recommendation.
+4. Use [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md) and the process plans under `docs/superpowers/plans/` for execution detail.
+5. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for operational workflows.
+6. Use [API keys reference](reference/api-keys.md) and the reports section as supporting reference and verification material.
 
 ## Document Status
 
