@@ -74,7 +74,14 @@ class VLMObserveCapability:
         for view in view_order:
             if view not in images:
                 continue
-            image_data = images[view]
+            image_value = images[view]
+            if isinstance(image_value, bytes):
+                image_data = image_value
+            elif isinstance(image_value, str):
+                with open(image_value, "rb") as file_obj:
+                    image_data = file_obj.read()
+            else:
+                continue
             frame = CameraFrame(image_data=image_data, timestamp=time.time())
             analyzed_views.append(view)
             result = await self._analyzer.analyze_frame(frame, scene_context="")

@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from mosaic.plugin_sdk.types import ExecutionContext
 from mosaic.runtime.vlm_pipeline.models import DetectionResult, RoomClassification, DetectedObject
@@ -44,5 +45,37 @@ async def test_vlm_observe_capability_returns_aggregated_semantic_observation():
     assert result.success is True
     assert result.data["checkpoint_id"] == "cp-01"
     assert result.data["predicted_room"] == "卧室"
-    assert set(result.data["objects"]) == {"黄色毛巾", "床"}
+    assert result.data["room_confidence"] == 0.92
+    assert result.data["objects"] == ["黄色毛巾", "床"]
+    assert result.data["landmarks"] == []
+    assert result.data["relations"] == []
     assert analyzer.calls == [b"front", b"left", b"right", b"back"]
+
+
+@pytest.mark.asyncio
+async def test_vlm_observe_capability_loads_path_inputs(tmp_path: Path):
+    class ByteRecordingAnalyzer:
+        def __init__(self):
+            self.calls = []
+
+        async def analyze_frame(self, frame, scene_context=""):
+            self.calls.append(frame.image_data)
+            return DetectionResult(objects=[], room_classification=None)
+
+    file_path = tmp_path / "front.jpg"
+    file_bytes = b"path-bytes"
+    file_path.write_bytes(file_bytes)
+
+    analyzer = ByteRecordingAnalyzer()
+    cap = VLMObserveCapability(analyzer=analyzer)
+    result = await cap.execute(
+        "observe_scene",
+        {
+            "checkpoint_id": "cp-02",
+            "images": {"front": str(file_path)},
+        },
+        ExecutionContext(session_id="s1"),
+    )
+
+    assert result.success is True
+    assert analyzer.calls == [file_bytes]
