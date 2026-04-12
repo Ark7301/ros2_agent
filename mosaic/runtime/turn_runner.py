@@ -300,7 +300,9 @@ class TurnRunner:
             if system_message_index is not None:
                 msg = messages[system_message_index]
                 if msg.get("role") == "system":
-                    msg["content"] = self._build_system_content(user_input)
+                    refreshed_content = self._build_system_content(user_input)
+                    if refreshed_content:
+                        msg["content"] = refreshed_content
 
             # 过程输出：工具执行结果
             for tc, tr in zip(response.tool_calls, tool_results):
