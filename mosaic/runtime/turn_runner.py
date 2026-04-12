@@ -265,10 +265,9 @@ class TurnRunner:
                             tc["name"], args, tr.success,
                         )
                 # 刷新场景图（环境已变化）
-                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
                 if messages and messages[0].get("role") == "system":
-                    messages[0]["content"] = (
-                        f"{self._system_prompt}\n\n{scene_text}"
+                    messages[0]["content"] = self._build_system_content(
+                        user_input,
                     )
 
             # 过程输出：工具执行结果
