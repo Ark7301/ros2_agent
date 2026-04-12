@@ -135,3 +135,85 @@ def test_mapper_build_target_index_dedups_rooms_and_landmarks() -> None:
     assert index.candidate_checkpoint_ids == ["cp-06", "cp-07"]
     assert sorted(index.supporting_landmarks) == ["冰箱", "橱柜"]
     assert index.confidence == 1.0
+
+
+def test_mapper_add_checkpoint_duplicate_id_raises() -> None:
+    mapper = TopologySemanticMapper()
+    observation = SemanticObservation(
+        checkpoint_id="cp-08",
+        predicted_room="玄关",
+        room_confidence=0.5,
+        landmarks=["衣帽架"],
+        objects=["雨伞"],
+        relations=[],
+        evidence_summary="玄关有雨伞",
+    )
+    mapper.add_checkpoint(
+        checkpoint_id="cp-08",
+        parent_checkpoint_id=None,
+        motion_from_parent=None,
+        observation=observation,
+    )
+    with pytest.raises(ValueError, match="duplicate checkpoint"):
+        mapper.add_checkpoint(
+            checkpoint_id="cp-08",
+            parent_checkpoint_id=None,
+            motion_from_parent=None,
+            observation=observation,
+        )
+
+
+def test_mapper_child_depth_is_parent_plus_one() -> None:
+    mapper = TopologySemanticMapper()
+    root = SemanticObservation(
+        checkpoint_id="cp-root",
+        predicted_room="大厅",
+        room_confidence=0.9,
+        landmarks=[],
+        objects=["花瓶"],
+        relations=[],
+        evidence_summary="大厅有花瓶",
+    )
+    parent_node = mapper.add_checkpoint(
+        checkpoint_id="cp-root",
+        parent_checkpoint_id=None,
+        motion_from_parent=None,
+        observation=root,
+    )
+    child_obs = SemanticObservation(
+        checkpoint_id="cp-child",
+        predicted_room="走廊",
+        room_confidence=0.85,
+        landmarks=["画"],
+        objects=["钥匙"],
+        relations=[],
+        evidence_summary="走廊有钥匙",
+    )
+    child_node = mapper.add_checkpoint(
+        checkpoint_id="cp-child",
+        parent_checkpoint_id=parent_node.checkpoint_id,
+        motion_from_parent=None,
+        observation=child_obs,
+    )
+    assert child_node.depth_from_start == parent_node.depth_from_start + 1
+
+
+def test_mapper_build_target_index_returns_sorted_checkpoint_ids() -> None:
+    mapper = TopologySemanticMapper()
+    for checkpoint_id in ("cp-b", "cp-a", "cp-c"):
+        mapper.add_checkpoint(
+            checkpoint_id=checkpoint_id,
+            parent_checkpoint_id=None,
+            motion_from_parent=None,
+            observation=SemanticObservation(
+                checkpoint_id=checkpoint_id,
+                predicted_room="书房",
+                room_confidence=0.8,
+                landmarks=["书架"],
+                objects=["蓝色书"],
+                relations=[],
+                evidence_summary="书房有蓝色书",
+            ),
+        )
+    index = mapper.build_target_index("蓝色书")
+    assert index.candidate_checkpoint_ids == ["cp-a", "cp-b", "cp-c"]

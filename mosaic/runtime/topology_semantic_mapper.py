@@ -19,6 +19,8 @@ class TopologySemanticMapper:
             raise ValueError(
                 "checkpoint_id must match observation checkpoint id",
             )
+        if checkpoint_id in self._checkpoints:
+            raise ValueError(f"duplicate checkpoint '{checkpoint_id}'")
 
         depth = 0
         if parent_checkpoint_id is not None:
@@ -57,6 +59,7 @@ class TopologySemanticMapper:
                 if observation.predicted_room:
                     candidate_room_labels.add(observation.predicted_room)
                 supporting_landmarks.update(observation.landmarks)
+        candidate_checkpoint_ids.sort()
         return MemoryTargetIndex(
             target_label=target_label,
             candidate_room_labels=sorted(candidate_room_labels),
