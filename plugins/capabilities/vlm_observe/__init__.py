@@ -71,7 +71,11 @@ class VLMObserveCapability:
         best_room_type = ""
         best_room_confidence = 0.0
 
+        valid_views = 0
+
         for view in view_order:
+            if self._cancelled:
+                return ExecutionResult(success=False, error="操作已取消")
             if view not in images:
                 continue
             image_value = images[view]
@@ -89,6 +93,7 @@ class VLMObserveCapability:
             else:
                 continue
             frame = CameraFrame(image_data=image_data, timestamp=time.time())
+            valid_views += 1
             analyzed_views.append(view)
             result = await self._analyzer.analyze_frame(frame, scene_context="")
 
@@ -103,6 +108,9 @@ class VLMObserveCapability:
                     continue
                 seen_objects.add(label)
                 objects.append(label)
+
+        if valid_views == 0:
+            return ExecutionResult(success=False, error="未分析到有效视角")
 
         evidence_summary = (
             f"checkpoint {checkpoint_id} analyzed {len(analyzed_views)} views"

@@ -98,3 +98,21 @@ async def test_vlm_observe_capability_returns_error_on_missing_path(tmp_path: Pa
 
     assert result.success is False
     assert result.error is not None
+
+
+@pytest.mark.asyncio
+async def test_vlm_observe_capability_fails_when_no_valid_views():
+    analyzer = FakeAnalyzer()
+    cap = VLMObserveCapability(analyzer=analyzer)
+
+    result = await cap.execute(
+        "observe_scene",
+        {
+            "checkpoint_id": "cp-04",
+            "images": {},
+        },
+        ExecutionContext(session_id="s2"),
+    )
+
+    assert result.success is False
+    assert result.error == "未分析到有效视角"
