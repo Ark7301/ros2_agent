@@ -27,6 +27,7 @@ from mosaic.runtime.spatial_provider import SpatialProvider
 from mosaic.runtime.world_state_manager import (
     WorkingMemory, SemanticMemory, EpisodicMemory, WorldStateManager,
 )
+from mosaic.runtime.operator_console import OperatorConsoleState, OperatorConsoleServer
 from mosaic.runtime.map_analyzer import MapAnalyzer
 from mosaic.runtime.slam_map_detector import SlamMapDetector
 from mosaic.runtime.scene_analyzer import SceneAnalyzer
@@ -99,6 +100,23 @@ class GatewayServer:
 
         # ── 6.5 初始化 ARIA WorldStateManager ──
         self._world_state_mgr = self._init_world_state_manager()
+        self._operator_console_state = OperatorConsoleState()
+        self._operator_console = OperatorConsoleServer(
+            self._operator_console_state,
+            host=self._config.get("human_proxy.host", "127.0.0.1"),
+            port=self._config.get("human_proxy.port", 8766),
+        )
+        try:
+            self._operator_console.start()
+        except OSError as e:
+            logger.warning("OperatorConsole 启动失败: %s", e)
+            self._operator_console = None
+
+        self._registry.configure_plugin(
+            "human-proxy",
+            console_state=self._operator_console_state,
+            timeout_s=self._config.get("human_proxy.timeout_s", 180.0),
+        )
 
         self._turn_runner = TurnRunner(
             registry=self._registry,
@@ -114,6 +132,7 @@ class GatewayServer:
                 "agents.default.system_prompt", "",
             ),
             scene_graph_mgr=self._scene_graph_mgr,
+            world_state_mgr=self._world_state_mgr,
         )
 
         # ── 7. 根据 ROS2 配置注入 SpatialProvider ──
@@ -318,6 +337,9 @@ class GatewayServer:
 
         # 触发 gateway.stop 钩子
         await self._hooks.emit("gateway.stop", {})
+
+        if self._operator_console:
+            self._operator_console.stop()
 
         logger.info("Gateway Server 已停止")
 

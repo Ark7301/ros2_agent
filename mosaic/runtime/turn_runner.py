@@ -18,6 +18,7 @@ from typing import Any
 
 from mosaic.plugin_sdk.types import ProviderConfig, ExecutionContext, ExecutionResult
 from mosaic.runtime.scene_graph_manager import SceneGraphManager
+from mosaic.runtime.planning_context_formatter import PlanningContextFormatter
 
 
 @dataclass
@@ -57,6 +58,7 @@ class TurnRunner:
         turn_timeout_s: float = 120,
         system_prompt: str = "",
         scene_graph_mgr: SceneGraphManager | None = None,
+        world_state_mgr=None,
     ):
         self._registry = registry       # PluginRegistry 实例
         self._event_bus = event_bus      # EventBus 实例
@@ -65,6 +67,17 @@ class TurnRunner:
         self._turn_timeout_s = turn_timeout_s    # Turn 超时时间（秒）
         self._system_prompt = system_prompt      # 系统提示词
         self._scene_graph_mgr = scene_graph_mgr  # 场景图管理器（可选）
+        self._world_state_mgr = world_state_mgr
+        self._context_formatter = PlanningContextFormatter()
+
+    def _build_system_content(self, user_input: str) -> str:
+        if self._world_state_mgr:
+            context = self._world_state_mgr.assemble_context(user_input)
+            robot_state = self._world_state_mgr.working.get_robot_state()
+            return self._context_formatter.render(robot_state, context)
+        if self._scene_graph_mgr:
+            return self._scene_graph_mgr.get_scene_prompt(user_input)
+        return self._system_prompt
 
     async def run(self, session, user_input: str) -> TurnResult:
         """执行完整 Turn — 入口方法，含超时保护
@@ -122,12 +135,8 @@ class TurnRunner:
 
         # 构建消息列表：system prompt → 历史上下文 → 当前用户输入
         messages: list[dict] = []
-        if self._system_prompt:
-            # ★ 集成点 1：组装上下文时注入场景图子图
-            system_content = self._system_prompt
-            if self._scene_graph_mgr:
-                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
-                system_content = f"{self._system_prompt}\n\n{scene_text}"
+        system_content = self._build_system_content(user_input)
+        if system_content:
             messages.append({"role": "system", "content": system_content})
         messages.extend(context.messages)
         messages.append({"role": "user", "content": user_input})
