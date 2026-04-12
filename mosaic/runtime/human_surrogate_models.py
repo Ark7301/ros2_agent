@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+REQUIRED_FRAME_KEYS = ("front", "left", "right", "back")
+
 
 @dataclass
 class ObservationFrameSet:
@@ -11,6 +13,14 @@ class ObservationFrameSet:
     operator_result: str
     images: dict[str, str]
     timestamp: float
+
+    def __post_init__(self) -> None:
+        missing = [key for key in REQUIRED_FRAME_KEYS if key not in self.images]
+        if missing:
+            raise ValueError(f"missing required frame(s): {missing}")
+        extra = [key for key in self.images if key not in REQUIRED_FRAME_KEYS]
+        if extra:
+            raise ValueError(f"unexpected frame(s): {extra}")
 
 
 @dataclass

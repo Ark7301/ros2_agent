@@ -1,3 +1,5 @@
+import pytest
+
 from mosaic.runtime.atomic_action_schema import MotionCommand, AtomicActionName
 from mosaic.runtime.human_surrogate_models import ObservationFrameSet, SemanticObservation
 
@@ -31,6 +33,22 @@ def test_observation_frame_set_requires_four_views() -> None:
         timestamp=1.0,
     )
     assert sorted(frame_set.images.keys()) == ["back", "front", "left", "right"]
+
+
+def test_observation_frame_set_rejects_missing_view() -> None:
+    with pytest.raises(ValueError):
+        ObservationFrameSet(
+            checkpoint_id="cp-01",
+            step_id="step-01",
+            issued_motion={"instruction_text": "前进 1.2 米"},
+            operator_result="completed",
+            images={
+                "front": "front.jpg",
+                "left": "left.jpg",
+                "back": "back.jpg",
+            },
+            timestamp=1.0,
+        )
 
 
 def test_semantic_observation_can_hold_room_and_objects() -> None:
