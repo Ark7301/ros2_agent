@@ -100,23 +100,25 @@ class GatewayServer:
 
         # ── 6.5 初始化 ARIA WorldStateManager ──
         self._world_state_mgr = self._init_world_state_manager()
-        self._operator_console_state = OperatorConsoleState()
-        self._operator_console = OperatorConsoleServer(
-            self._operator_console_state,
-            host=self._config.get("human_proxy.host", "127.0.0.1"),
-            port=self._config.get("human_proxy.port", 8766),
-        )
-        try:
-            self._operator_console.start()
-        except OSError as e:
-            logger.warning("OperatorConsole 启动失败: %s", e)
-            self._operator_console = None
+        human_proxy_cfg = self._config.get("human_proxy", None)
+        self._human_proxy_enabled = bool(human_proxy_cfg)
+        if isinstance(human_proxy_cfg, dict) and "enabled" in human_proxy_cfg:
+            self._human_proxy_enabled = bool(human_proxy_cfg.get("enabled", False))
 
-        self._registry.configure_plugin(
-            "human-proxy",
-            console_state=self._operator_console_state,
-            timeout_s=self._config.get("human_proxy.timeout_s", 180.0),
-        )
+        self._operator_console_state = None
+        self._operator_console = None
+        if self._human_proxy_enabled:
+            self._operator_console_state = OperatorConsoleState()
+            self._operator_console = OperatorConsoleServer(
+                self._operator_console_state,
+                host=self._config.get("human_proxy.host", "127.0.0.1"),
+                port=self._config.get("human_proxy.port", 8766),
+            )
+            self._registry.configure_plugin(
+                "human-proxy",
+                console_state=self._operator_console_state,
+                timeout_s=self._config.get("human_proxy.timeout_s", 180.0),
+            )
 
         self._turn_runner = TurnRunner(
             registry=self._registry,
@@ -302,6 +304,13 @@ class GatewayServer:
 
         # 触发 gateway.start 钩子
         await self._hooks.emit("gateway.start", {})
+
+        if self._operator_console:
+            try:
+                self._operator_console.start()
+            except OSError as e:
+                logger.warning("OperatorConsole 启动失败: %s", e)
+                self._operator_console = None
 
         # 启动 EventBus 事件循环（后台任务）
         self._bus_task = asyncio.create_task(self._event_bus.start())

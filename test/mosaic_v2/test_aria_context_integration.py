@@ -76,6 +76,7 @@ async def test_turn_runner_prefers_world_state_manager_context():
     await smgr.run_turn(session.session_id, "去客厅", runner)
 
     system_content = captured_messages[0][0]["content"]
+    assert "BASE" in system_content
     assert "[ARIA]" in system_content
     assert "机器人状态" in system_content
     assert "相似经验" in system_content
@@ -166,4 +167,5 @@ async def test_turn_runner_refreshes_aria_context_after_tool_execution():
 
     assert len(captured_messages) >= 2
     system_content = captured_messages[1][0]["content"]
+    assert "BASE" in system_content
     assert "[ARIA]" in system_content

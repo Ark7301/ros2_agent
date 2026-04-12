@@ -74,7 +74,10 @@ class TurnRunner:
         if self._world_state_mgr:
             context = self._world_state_mgr.assemble_context(user_input)
             robot_state = self._world_state_mgr.working.get_robot_state()
-            return self._context_formatter.render(robot_state, context)
+            aria_block = self._context_formatter.render(robot_state, context)
+            if self._system_prompt:
+                return f"{self._system_prompt}\n\n{aria_block}"
+            return aria_block
         if self._scene_graph_mgr:
             return self._scene_graph_mgr.get_scene_prompt(user_input)
         return self._system_prompt
@@ -264,11 +267,9 @@ class TurnRunner:
                         self._scene_graph_mgr.update_from_execution(
                             tc["name"], args, tr.success,
                         )
-                # 刷新场景图（环境已变化）
-                if messages and messages[0].get("role") == "system":
-                    messages[0]["content"] = self._build_system_content(
-                        user_input,
-                    )
+            # 刷新系统消息（环境已变化）
+            if messages and messages[0].get("role") == "system":
+                messages[0]["content"] = self._build_system_content(user_input)
 
             # 过程输出：工具执行结果
             for tc, tr in zip(response.tool_calls, tool_results):
