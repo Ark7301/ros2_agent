@@ -100,9 +100,9 @@ class GatewayServer:
 
         # ── 6.5 初始化 ARIA WorldStateManager ──
         self._world_state_mgr = self._init_world_state_manager()
-        human_proxy_cfg = self._config.get("human_proxy", None)
-        self._human_proxy_enabled = bool(human_proxy_cfg)
-        if isinstance(human_proxy_cfg, dict) and "enabled" in human_proxy_cfg:
+        human_proxy_cfg = self._config.get("human_proxy", {}) or {}
+        self._human_proxy_enabled = False
+        if isinstance(human_proxy_cfg, dict):
             self._human_proxy_enabled = bool(human_proxy_cfg.get("enabled", False))
 
         self._operator_console_state = None
@@ -112,7 +112,7 @@ class GatewayServer:
             self._operator_console = OperatorConsoleServer(
                 self._operator_console_state,
                 host=self._config.get("human_proxy.host", "127.0.0.1"),
-                port=self._config.get("human_proxy.port", 8766),
+                port=self._config.get("human_proxy.port", 8876),
             )
             self._registry.configure_plugin(
                 "human-proxy",

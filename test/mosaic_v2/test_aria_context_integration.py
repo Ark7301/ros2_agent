@@ -169,3 +169,64 @@ async def test_turn_runner_refreshes_aria_context_after_tool_execution():
     system_content = captured_messages[1][0]["content"]
     assert "BASE" in system_content
     assert "[ARIA]" in system_content
+
+
+@pytest.mark.asyncio
+async def test_turn_runner_scene_graph_fallback_keeps_system_prompt():
+    captured_messages = []
+
+    class CapturingProvider:
+        def __init__(self):
+            self.meta = PluginMeta(id="prov", name="Provider", version="0.1.0", description="", kind="provider")
+
+        async def chat(self, messages, tools, config):
+            captured_messages.append(messages)
+            return ProviderResponse(content="完成", tool_calls=[], usage={})
+
+        async def stream(self, messages, tools, config):
+            yield ProviderResponse(content="完成", tool_calls=[], usage={})
+
+        async def validate_auth(self):
+            return True
+
+    class ContextEngine:
+        def __init__(self):
+            self.meta = PluginMeta(id="ce", name="ContextEngine", version="0.1.0", description="", kind="context-engine")
+
+        async def ingest(self, session_id, message):
+            return None
+
+        async def assemble(self, session_id, token_budget):
+            return AssembleResult(messages=[], token_count=0)
+
+        async def compact(self, session_id, force=False):
+            raise AssertionError("compact should not be called")
+
+    registry = PluginRegistry()
+    registry.register("prov", CapturingProvider, "provider")
+    registry.set_default_provider("prov")
+    registry.register("ce", ContextEngine, "context-engine")
+    registry.set_slot("context-engine", "ce")
+
+    sgm = SceneGraphManager()
+    sgm._graph.add_node(SceneNode("living_room", NodeType.ROOM, "客厅", position=(0.0, 0.0)))
+    sgm._graph.add_node(SceneNode("robot", NodeType.AGENT, "机器人", position=(0.0, 0.0)))
+    sgm._graph.add_edge(SceneEdge("robot", "living_room", EdgeType.AT))
+
+    runner = TurnRunner(
+        registry=registry,
+        event_bus=EventBus(),
+        hooks=HookManager(),
+        system_prompt="BASE",
+        scene_graph_mgr=sgm,
+        world_state_mgr=None,
+    )
+
+    smgr = SessionManager()
+    session = await smgr.create_session("default", "cli")
+    await smgr.run_turn(session.session_id, "去客厅", runner)
+
+    system_content = captured_messages[0][0]["content"]
+    assert "BASE" in system_content
+    assert "[场景图]" in system_content
+    assert "客厅" in system_content

@@ -79,7 +79,12 @@ class TurnRunner:
                 return f"{self._system_prompt}\n\n{aria_block}"
             return aria_block
         if self._scene_graph_mgr:
-            return self._scene_graph_mgr.get_scene_prompt(user_input)
+            scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
+            if self._system_prompt:
+                if scene_text:
+                    return f"{self._system_prompt}\n\n{scene_text}"
+                return self._system_prompt
+            return scene_text
         return self._system_prompt
 
     async def run(self, session, user_input: str) -> TurnResult:

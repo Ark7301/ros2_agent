@@ -104,8 +104,9 @@ channels:
     publish_topic: "/agent_response"
 
 human_proxy:
+  enabled: false
   host: "127.0.0.1"
-  port: 8766
+  port: 8876
   timeout_s: 180.0
 
 # ── 节点层配置 ──
