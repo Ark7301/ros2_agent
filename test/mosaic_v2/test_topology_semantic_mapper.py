@@ -20,6 +20,7 @@ def test_mapper_adds_root_checkpoint() -> None:
     )
     assert node.checkpoint_id == "cp-01"
     assert node.resolved_room_label == "客厅"
+    assert node.depth_from_start == 0
 
 
 def test_mapper_builds_target_index() -> None:
@@ -42,3 +43,5 @@ def test_mapper_builds_target_index() -> None:
     assert index.target_label == "黄色毛巾"
     assert "卧室" in index.candidate_room_labels
     assert "cp-01" in index.candidate_checkpoint_ids
+    assert index.supporting_landmarks == ["床"]
+    assert index.confidence == 1.0
