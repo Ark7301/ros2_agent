@@ -1,0 +1,12 @@
+operator_console:
+  host: "127.0.0.1"
+  port: 8766
+  timeout_s: 180
+  required_views:
+    - front
+    - left
+    - right
+    - back
+  completion_values:
+    - completed
+    - failed
