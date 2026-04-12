@@ -78,8 +78,14 @@ class VLMObserveCapability:
             if isinstance(image_value, bytes):
                 image_data = image_value
             elif isinstance(image_value, str):
-                with open(image_value, "rb") as file_obj:
-                    image_data = file_obj.read()
+                try:
+                    with open(image_value, "rb") as file_obj:
+                        image_data = file_obj.read()
+                except OSError as exc:
+                    return ExecutionResult(
+                        success=False,
+                        error=f"读取图像失败: {exc}",
+                    )
             else:
                 continue
             frame = CameraFrame(image_data=image_data, timestamp=time.time())

@@ -79,3 +79,22 @@ async def test_vlm_observe_capability_loads_path_inputs(tmp_path: Path):
 
     assert result.success is True
     assert analyzer.calls == [file_bytes]
+
+
+@pytest.mark.asyncio
+async def test_vlm_observe_capability_returns_error_on_missing_path(tmp_path: Path):
+    analyzer = FakeAnalyzer()
+    cap = VLMObserveCapability(analyzer=analyzer)
+    missing_path = tmp_path / "missing.jpg"
+
+    result = await cap.execute(
+        "observe_scene",
+        {
+            "checkpoint_id": "cp-03",
+            "images": {"front": str(missing_path)},
+        },
+        ExecutionContext(session_id="s1"),
+    )
+
+    assert result.success is False
+    assert result.error is not None
