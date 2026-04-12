@@ -69,7 +69,6 @@ class TurnRunner:
         self._scene_graph_mgr = scene_graph_mgr  # 场景图管理器（可选）
         self._world_state_mgr = world_state_mgr
         self._context_formatter = PlanningContextFormatter()
-        self._system_message_marker = "_turn_runner_system"
 
     def _build_system_content(self, user_input: str) -> str:
         base_prompt = self._system_prompt or ""
@@ -95,7 +94,8 @@ class TurnRunner:
                 if base_prompt:
                     return f"{base_prompt}\n\n{aria_block}"
                 return aria_block
-            except Exception:
+            except Exception as exc:
+                self._log(f"⚠️ ARIA 组装失败，回退到场景图: {exc}")
                 scene_content = build_scene_graph_content()
                 if scene_content is not None:
                     return scene_content
@@ -163,11 +163,12 @@ class TurnRunner:
         # 构建消息列表：system prompt → 历史上下文 → 当前用户输入
         messages: list[dict] = []
         system_content = self._build_system_content(user_input)
+        system_message_index: int | None = None
         if system_content:
+            system_message_index = len(messages)
             messages.append({
                 "role": "system",
                 "content": system_content,
-                self._system_message_marker: True,
             })
         messages.extend(context.messages)
         messages.append({"role": "user", "content": user_input})
@@ -296,10 +297,10 @@ class TurnRunner:
                             tc["name"], args, tr.success,
                         )
             # 刷新系统消息（环境已变化）
-            for msg in messages:
-                if msg.get("role") == "system" and msg.get(self._system_message_marker):
+            if system_message_index is not None:
+                msg = messages[system_message_index]
+                if msg.get("role") == "system":
                     msg["content"] = self._build_system_content(user_input)
-                    break
 
             # 过程输出：工具执行结果
             for tc, tr in zip(response.tool_calls, tool_results):

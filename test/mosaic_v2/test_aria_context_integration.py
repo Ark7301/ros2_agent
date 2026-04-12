@@ -165,6 +165,7 @@ async def test_turn_runner_refreshes_aria_context_after_tool_execution():
     session = await smgr.create_session("default", "cli")
     await smgr.run_turn(session.session_id, "去客厅", runner)
 
+    assert "_turn_runner_system" not in captured_messages[0][0]
     assert len(captured_messages) >= 2
     system_content = captured_messages[1][0]["content"]
     assert "BASE" in system_content
