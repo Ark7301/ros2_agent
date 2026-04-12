@@ -92,3 +92,38 @@ def test_mismatched_submission_does_not_erase_step():
 
     console.submit_result({"step_id": "other-step"})
     assert console.current_step == payload
+
+
+@pytest.mark.asyncio
+async def test_late_submission_after_timeout_is_buffered():
+    console = OperatorConsoleState()
+    step_id = "step-late"
+    console.publish_step({"step_id": step_id, "status": "pending"})
+
+    future = asyncio.get_running_loop().create_future()
+    future.cancel()
+    console._futures[step_id] = future
+
+    payload = {"step_id": step_id, "status": "completed"}
+    console.submit_result(payload)
+    await asyncio.sleep(0)
+
+    result = await console.wait_for_result(step_id, timeout_s=0.05)
+    assert result == payload
+
+
+@pytest.mark.asyncio
+async def test_republish_same_step_preserves_active_waiter():
+    console = OperatorConsoleState()
+    step_id = "step-republish"
+    console.publish_step({"step_id": step_id, "revision": 1})
+
+    waiter = asyncio.create_task(console.wait_for_result(step_id, timeout_s=0.2))
+    await asyncio.sleep(0)
+
+    console.publish_step({"step_id": step_id, "revision": 2})
+    payload = {"step_id": step_id, "status": "completed"}
+    console.submit_result(payload)
+
+    result = await waiter
+    assert result == payload

@@ -21,9 +21,6 @@ class OperatorConsoleState:
     def publish_step(self, payload: dict[str, Any]) -> None:
         with self._lock:
             self.current_step = copy.deepcopy(payload)
-            step_id = payload.get("step_id")
-            if step_id and step_id in self._futures:
-                del self._futures[step_id]
 
     def submit_result(self, payload: dict[str, Any]) -> None:
         step_id = payload.get("step_id")
@@ -31,7 +28,7 @@ class OperatorConsoleState:
             return
         with self._lock:
             future = self._futures.pop(step_id, None)
-            if future:
+            if future and not future.done():
                 if (
                     self.current_step
                     and self.current_step.get("step_id") == step_id
@@ -39,13 +36,22 @@ class OperatorConsoleState:
                     self.current_step = None
             else:
                 self._pending_results[step_id] = copy.deepcopy(payload)
+                future = None
         if not future:
             return
         loop = future.get_loop()
-        if loop.is_running():
-            loop.call_soon_threadsafe(future.set_result, payload)
-        else:
+
+        def _deliver_result() -> None:
+            if future.done():
+                with self._lock:
+                    self._pending_results[step_id] = copy.deepcopy(payload)
+                return
             future.set_result(payload)
+
+        if loop.is_running():
+            loop.call_soon_threadsafe(_deliver_result)
+        else:
+            _deliver_result()
 
     async def wait_for_result(self, step_id: str, timeout_s: float) -> dict[str, Any]:
         loop = asyncio.get_running_loop()
