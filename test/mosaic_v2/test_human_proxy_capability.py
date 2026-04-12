@@ -57,3 +57,38 @@ def test_operator_console_publish_sets_current_step():
     payload = {"step_id": "step-publish", "details": "demo"}
     console.publish_step(payload)
     assert console.current_step == payload
+
+
+@pytest.mark.asyncio
+async def test_wait_for_result_returns_pending_submission():
+    console = OperatorConsoleState()
+    step_id = "step-early"
+    payload = {"step_id": step_id, "status": "pending"}
+    console.publish_step(payload)
+    console.submit_result(payload)
+
+    result = await console.wait_for_result(step_id, timeout_s=0.5)
+    assert result == payload
+
+
+@pytest.mark.asyncio
+async def test_timeout_clears_current_step():
+    console = OperatorConsoleState()
+    step_id = "step-timeout"
+    payload = {"step_id": step_id, "status": "pending"}
+    console.publish_step(payload)
+
+    with pytest.raises(asyncio.TimeoutError):
+        await console.wait_for_result(step_id, timeout_s=0.01)
+
+    assert console.current_step is None
+
+
+def test_mismatched_submission_does_not_erase_step():
+    console = OperatorConsoleState()
+    step_id = "step-active"
+    payload = {"step_id": step_id, "status": "pending"}
+    console.publish_step(payload)
+
+    console.submit_result({"step_id": "other-step"})
+    assert console.current_step == payload

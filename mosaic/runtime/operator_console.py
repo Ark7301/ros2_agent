@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,11 +15,12 @@ class OperatorConsoleState:
     def __init__(self) -> None:
         self.current_step: dict[str, Any] | None = None
         self._futures: dict[str, asyncio.Future[Any]] = {}
+        self._pending_results: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
 
     def publish_step(self, payload: dict[str, Any]) -> None:
         with self._lock:
-            self.current_step = payload
+            self.current_step = copy.deepcopy(payload)
             step_id = payload.get("step_id")
             if step_id and step_id in self._futures:
                 del self._futures[step_id]
@@ -29,7 +31,14 @@ class OperatorConsoleState:
             return
         with self._lock:
             future = self._futures.pop(step_id, None)
-            self.current_step = None
+            if future:
+                if (
+                    self.current_step
+                    and self.current_step.get("step_id") == step_id
+                ):
+                    self.current_step = None
+            else:
+                self._pending_results[step_id] = copy.deepcopy(payload)
         if not future:
             return
         loop = future.get_loop()
@@ -42,15 +51,37 @@ class OperatorConsoleState:
         loop = asyncio.get_running_loop()
         future = loop.create_future()
         with self._lock:
+            pending = self._pending_results.pop(step_id, None)
+            if pending is not None:
+                if (
+                    self.current_step
+                    and self.current_step.get("step_id") == step_id
+                ):
+                    self.current_step = None
+                return pending
             self._futures[step_id] = future
         try:
             result = await asyncio.wait_for(future, timeout=timeout_s)
             return result
+        except asyncio.TimeoutError:
+            with self._lock:
+                if (
+                    self.current_step
+                    and self.current_step.get("step_id") == step_id
+                ):
+                    self.current_step = None
+            raise
         finally:
             with self._lock:
                 existing = self._futures.get(step_id)
                 if existing is future:
                     del self._futures[step_id]
+
+    def get_current_step(self) -> dict[str, Any] | None:
+        with self._lock:
+            if self.current_step is None:
+                return None
+            return copy.deepcopy(self.current_step)
 
 
 def _build_handler(state: OperatorConsoleState) -> type[BaseHTTPRequestHandler]:
@@ -99,7 +130,7 @@ def _build_handler(state: OperatorConsoleState) -> type[BaseHTTPRequestHandler]:
                 return
 
             if parsed.path == "/step":
-                self._respond_json(state.current_step or {})
+                self._respond_json(state.get_current_step() or {})
                 return
 
             self.send_error(404)
