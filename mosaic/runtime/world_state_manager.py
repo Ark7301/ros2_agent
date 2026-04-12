@@ -260,6 +260,31 @@ class WorldStateManager:
             metadata=metadata,
         )
 
+    def store_checkpoint_node(self, checkpoint) -> None:
+        key = f"checkpoint:{checkpoint.checkpoint_id}"
+        self._kv_store[key] = MemoryEntry(
+            key=key,
+            content=checkpoint.resolved_room_label,
+            metadata={
+                "parent_checkpoint_id": checkpoint.parent_checkpoint_id,
+                "known_landmarks": checkpoint.known_landmarks,
+                "known_objects": checkpoint.known_objects,
+            },
+        )
+
+    def store_target_index(self, target_index) -> None:
+        key = f"target:{target_index.target_label}"
+        self._kv_store[key] = MemoryEntry(
+            key=key,
+            content=target_index.target_label,
+            metadata={
+                "candidate_room_labels": target_index.candidate_room_labels,
+                "candidate_checkpoint_ids": target_index.candidate_checkpoint_ids,
+                "supporting_landmarks": target_index.supporting_landmarks,
+                "confidence": target_index.confidence,
+            },
+        )
+
     async def search(self, query: str, top_k: int = 5) -> list[MemoryEntry]:
         """语义搜索 — 委托给 SemanticMemory 检索"""
         # 从 kv_store 中做简单关键词匹配
