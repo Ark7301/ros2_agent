@@ -69,23 +69,42 @@ class TurnRunner:
         self._scene_graph_mgr = scene_graph_mgr  # 场景图管理器（可选）
         self._world_state_mgr = world_state_mgr
         self._context_formatter = PlanningContextFormatter()
+        self._system_message_marker = "_turn_runner_system"
 
     def _build_system_content(self, user_input: str) -> str:
-        if self._world_state_mgr:
-            context = self._world_state_mgr.assemble_context(user_input)
-            robot_state = self._world_state_mgr.working.get_robot_state()
-            aria_block = self._context_formatter.render(robot_state, context)
-            if self._system_prompt:
-                return f"{self._system_prompt}\n\n{aria_block}"
-            return aria_block
-        if self._scene_graph_mgr:
-            scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
-            if self._system_prompt:
+        base_prompt = self._system_prompt or ""
+
+        def build_scene_graph_content() -> str | None:
+            if not self._scene_graph_mgr:
+                return None
+            try:
+                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
+            except Exception:
+                return None
+            if base_prompt:
                 if scene_text:
-                    return f"{self._system_prompt}\n\n{scene_text}"
-                return self._system_prompt
+                    return f"{base_prompt}\n\n{scene_text}"
+                return base_prompt
             return scene_text
-        return self._system_prompt
+
+        if self._world_state_mgr:
+            try:
+                context = self._world_state_mgr.assemble_context(user_input)
+                robot_state = self._world_state_mgr.working.get_robot_state()
+                aria_block = self._context_formatter.render(robot_state, context)
+                if base_prompt:
+                    return f"{base_prompt}\n\n{aria_block}"
+                return aria_block
+            except Exception:
+                scene_content = build_scene_graph_content()
+                if scene_content is not None:
+                    return scene_content
+                return base_prompt
+
+        scene_content = build_scene_graph_content()
+        if scene_content is not None:
+            return scene_content
+        return base_prompt
 
     async def run(self, session, user_input: str) -> TurnResult:
         """执行完整 Turn — 入口方法，含超时保护
@@ -145,7 +164,11 @@ class TurnRunner:
         messages: list[dict] = []
         system_content = self._build_system_content(user_input)
         if system_content:
-            messages.append({"role": "system", "content": system_content})
+            messages.append({
+                "role": "system",
+                "content": system_content,
+                self._system_message_marker: True,
+            })
         messages.extend(context.messages)
         messages.append({"role": "user", "content": user_input})
 
@@ -273,8 +296,10 @@ class TurnRunner:
                             tc["name"], args, tr.success,
                         )
             # 刷新系统消息（环境已变化）
-            if messages and messages[0].get("role") == "system":
-                messages[0]["content"] = self._build_system_content(user_input)
+            for msg in messages:
+                if msg.get("role") == "system" and msg.get(self._system_message_marker):
+                    msg["content"] = self._build_system_content(user_input)
+                    break
 
             # 过程输出：工具执行结果
             for tc, tr in zip(response.tool_calls, tool_results):
