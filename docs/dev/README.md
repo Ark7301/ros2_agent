@@ -26,6 +26,7 @@ This section contains material that directly helps contributors set up, run, con
 - [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md)
 - [SLAM simulation mapping](runbooks/slam-sim-mapping.md)
 - [Scene graph integration testing](runbooks/scene-graph-integration-testing.md)
+- [Human-surrogate memory demo](runbooks/human-surrogate-memory-demo.md)
 - [API keys reference](reference/api-keys.md)
 - [MOSAIC v2 smoke test](reports/2026-04-03-mosaic-v2-smoke-test.md)
 - [SLAM mapping fix report](reports/2026-04-03-slam-mapping-fix-report.md)
