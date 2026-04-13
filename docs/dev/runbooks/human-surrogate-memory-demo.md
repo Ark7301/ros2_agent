@@ -8,8 +8,10 @@ Run the first-stage ARIA memory validation demo using a developer carrying a cam
 
 1. Read the current movement instruction in the local operator console.
 2. Execute the movement.
-3. Upload `front`, `left`, `right`, and `back` images.
-4. Click `Completed` or `Failed`.
+3. Save `front`, `left`, `right`, and `back` images under
+   `config/demo/observation_frames/...`.
+4. Paste the saved file paths into the operator console for each view.
+5. Click `Completed` or `Failed`.
 
 ## Demo Command
 
@@ -21,13 +23,15 @@ Stop the demo with `Ctrl+C`.
 
 ## Observation Frame Artifacts
 
-Operator uploads are stored under `config/demo/observation_frames` with one
+Operator files should be stored under `config/demo/observation_frames` with one
 subdirectory per step. The expected layout is:
 
 - `config/demo/observation_frames/step-001/front.jpg`
 - `config/demo/observation_frames/step-001/left.jpg`
 - `config/demo/observation_frames/step-001/right.jpg`
 - `config/demo/observation_frames/step-001/back.jpg`
+
+Paste these file paths into the operator console for each required view.
 
 ## Expected Success Signals
 
