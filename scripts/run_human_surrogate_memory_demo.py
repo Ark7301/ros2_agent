@@ -14,7 +14,6 @@ from mosaic.gateway.server import GatewayServer
 READY_MESSAGE = "Human-surrogate ARIA memory demo is ready."
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "config/demo/human_surrogate_memory.yaml"
-OBSERVATION_FRAMES_DIR = REPO_ROOT / "config/demo/observation_frames"
 OBSERVATION_FRAMES_DISPLAY = "config/demo/observation_frames"
 BASE_MOSAIC_CONFIG = REPO_ROOT / "config/mosaic.yaml"
 HUMAN_PROXY_HOST = "127.0.0.1"
@@ -88,15 +87,16 @@ async def _run(dry_run: bool) -> None:
         return
 
     runtime_config_path = _write_runtime_config(demo_config)
+    start_error: Exception | None = None
     stop_error: Exception | None = None
     try:
         server = GatewayServer(config_path=runtime_config_path)
         try:
-            await server.start()
             try:
+                await server.start()
                 await asyncio.Event().wait()
-            except asyncio.CancelledError:
-                raise
+            except Exception as exc:
+                start_error = exc
         finally:
             try:
                 await server.stop()
@@ -107,6 +107,8 @@ async def _run(dry_run: bool) -> None:
             os.unlink(runtime_config_path)
         except OSError:
             pass
+        if start_error:
+            raise start_error
         if stop_error:
             raise stop_error
 
