@@ -384,10 +384,16 @@ class TurnRunner:
         异常被封装为 ExecutionResult(success=False)，保证返回数量与输入一致。
         """
         tasks = []
-        for tc in tool_calls:
+        for index, tc in enumerate(tool_calls):
             # 根据工具名查找对应的 CapabilityPlugin
             cap = self._resolve_capability_for_tool(tc["name"])
-            ctx = ExecutionContext(session_id=session.session_id)
+            step_id = tc.get("id")
+            if not step_id:
+                step_id = f"{session.session_id}:{tc['name']}:{index}"
+            ctx = ExecutionContext(
+                session_id=session.session_id,
+                metadata={"step_id": step_id},
+            )
             # arguments 可能是 JSON 字符串，需要解析
             args = tc.get("arguments", {})
             if isinstance(args, str):

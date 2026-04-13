@@ -21,6 +21,7 @@ class HumanProxyCapability:
         self,
         console_state: OperatorConsoleState | None = None,
         timeout_s: float = 180.0,
+        enabled: bool = True,
     ) -> None:
         self.meta = PluginMeta(
             id="human-proxy",
@@ -32,11 +33,14 @@ class HumanProxyCapability:
         )
         self._state = console_state or OperatorConsoleState()
         self._timeout = timeout_s
+        self._enabled = enabled
 
     def get_supported_intents(self) -> list[str]:
         return ["request_human_move"]
 
     def get_tool_definitions(self) -> list[dict[str, Any]]:
+        if not self._enabled:
+            return []
         return [
             {
                 "name": "request_human_move",
@@ -57,6 +61,8 @@ class HumanProxyCapability:
     async def execute(
         self, intent: str, params: dict[str, Any], ctx: ExecutionContext
     ) -> ExecutionResult:
+        if not self._enabled:
+            return ExecutionResult(success=False, error="human proxy disabled")
         if intent != "request_human_move":
             return ExecutionResult(success=False, error=f"不支持的意图: {intent}")
 
@@ -76,6 +82,15 @@ class HumanProxyCapability:
         operator_result = result.get("operator_result")
         is_completed = operator_result == "completed"
         if is_completed:
+            images = result.get("images", {}) or {}
+            required_views = {"front", "left", "right", "back"}
+            missing_views = required_views - set(images.keys())
+            if missing_views:
+                return ExecutionResult(
+                    success=False,
+                    data=result,
+                    error=f"缺少视角图像: {', '.join(sorted(missing_views))}",
+                )
             return ExecutionResult(success=True, data=result, message="真人代机已完成操作")
         return ExecutionResult(success=False, data=result, error="真人代机执行失败")
 
@@ -87,6 +102,12 @@ class HumanProxyCapability:
 
 
 def create_plugin(
-    console_state: OperatorConsoleState | None = None, timeout_s: float = 180.0
+    console_state: OperatorConsoleState | None = None,
+    timeout_s: float = 180.0,
+    enabled: bool = True,
 ) -> HumanProxyCapability:
-    return HumanProxyCapability(console_state=console_state, timeout_s=timeout_s)
+    return HumanProxyCapability(
+        console_state=console_state,
+        timeout_s=timeout_s,
+        enabled=enabled,
+    )

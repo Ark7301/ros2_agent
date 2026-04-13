@@ -114,11 +114,12 @@ class GatewayServer:
                 host=self._config.get("human_proxy.host", "127.0.0.1"),
                 port=self._config.get("human_proxy.port", 8876),
             )
-            self._registry.configure_plugin(
-                "human-proxy",
-                console_state=self._operator_console_state,
-                timeout_s=self._config.get("human_proxy.timeout_s", 180.0),
-            )
+        self._registry.configure_plugin(
+            "human-proxy",
+            console_state=self._operator_console_state,
+            timeout_s=self._config.get("human_proxy.timeout_s", 180.0),
+            enabled=self._human_proxy_enabled,
+        )
 
         self._turn_runner = TurnRunner(
             registry=self._registry,
