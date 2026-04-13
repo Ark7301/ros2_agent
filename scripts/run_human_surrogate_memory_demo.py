@@ -12,9 +12,11 @@ import yaml
 from mosaic.gateway.server import GatewayServer
 
 READY_MESSAGE = "Human-surrogate ARIA memory demo is ready."
-CONFIG_PATH = "config/demo/human_surrogate_memory.yaml"
-OBSERVATION_FRAMES_DIR = "config/demo/observation_frames"
-BASE_MOSAIC_CONFIG = "config/mosaic.yaml"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = REPO_ROOT / "config/demo/human_surrogate_memory.yaml"
+OBSERVATION_FRAMES_DIR = REPO_ROOT / "config/demo/observation_frames"
+OBSERVATION_FRAMES_DISPLAY = "config/demo/observation_frames"
+BASE_MOSAIC_CONFIG = REPO_ROOT / "config/mosaic.yaml"
 HUMAN_PROXY_HOST = "127.0.0.1"
 HUMAN_PROXY_PORT = 8876
 OPERATOR_CONSOLE_URL = f"http://{HUMAN_PROXY_HOST}:{HUMAN_PROXY_PORT}"
@@ -22,7 +24,12 @@ OPERATOR_CONSOLE_URL = f"http://{HUMAN_PROXY_HOST}:{HUMAN_PROXY_PORT}"
 
 def _load_demo_config() -> dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        demo_config = yaml.safe_load(f)
+    if not isinstance(demo_config, dict):
+        raise ValueError(
+            "Demo config must be a mapping. Check config/demo/human_surrogate_memory.yaml."
+        )
+    return demo_config
 
 
 def _print_startup_info(demo_config: dict[str, Any]) -> None:
@@ -34,9 +41,7 @@ def _print_startup_info(demo_config: dict[str, Any]) -> None:
     print(READY_MESSAGE)
     print(f"Environment: {environment}")
     print(f"Operator required views: {required_views}")
-    print(
-        f"Observation frame storage: {Path(OBSERVATION_FRAMES_DIR).as_posix()}"
-    )
+    print(f"Observation frame storage: {OBSERVATION_FRAMES_DISPLAY}")
     print(
         "Runtime config: human_proxy enabled in runtime config "
         f"(timeout_s={timeout_s}, host={HUMAN_PROXY_HOST}, port={HUMAN_PROXY_PORT})"
@@ -83,6 +88,7 @@ async def _run(dry_run: bool) -> None:
         return
 
     runtime_config_path = _write_runtime_config(demo_config)
+    stop_error: Exception | None = None
     try:
         server = GatewayServer(config_path=runtime_config_path)
         try:
@@ -92,12 +98,17 @@ async def _run(dry_run: bool) -> None:
             except asyncio.CancelledError:
                 raise
         finally:
-            await server.stop()
+            try:
+                await server.stop()
+            except Exception as exc:
+                stop_error = exc
     finally:
         try:
             os.unlink(runtime_config_path)
         except OSError:
             pass
+        if stop_error:
+            raise stop_error
 
 
 def _parse_args() -> argparse.Namespace:
