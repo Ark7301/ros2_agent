@@ -14,8 +14,20 @@ Run the first-stage ARIA memory validation demo using a developer carrying a cam
 ## Demo Command
 
 ```bash
-python scripts/run_human_surrogate_memory_demo.py
+PYTHONPATH=. python3 scripts/run_human_surrogate_memory_demo.py
 ```
+
+Stop the demo with `Ctrl+C`.
+
+## Observation Frame Artifacts
+
+Operator uploads are stored under `config/demo/observation_frames` with one
+subdirectory per step. The expected layout is:
+
+- `config/demo/observation_frames/step-001/front.jpg`
+- `config/demo/observation_frames/step-001/left.jpg`
+- `config/demo/observation_frames/step-001/right.jpg`
+- `config/demo/observation_frames/step-001/back.jpg`
 
 ## Expected Success Signals
 
