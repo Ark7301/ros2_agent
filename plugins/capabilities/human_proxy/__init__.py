@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import Any
 
 from mosaic.plugin_sdk.types import (
@@ -72,7 +73,10 @@ class HumanProxyCapability:
             "instruction_text": params.get("instruction_text", ""),
             "params": params,
         }
-        self._state.publish_step(payload)
+        try:
+            self._state.publish_step(payload)
+        except RuntimeError as exc:
+            return ExecutionResult(success=False, error=str(exc))
 
         try:
             result = await self._state.wait_for_result(step_id, self._timeout)
@@ -90,6 +94,20 @@ class HumanProxyCapability:
                     success=False,
                     data=result,
                     error=f"缺少视角图像: {', '.join(sorted(missing_views))}",
+                )
+            invalid_views = []
+            for view in required_views:
+                value = images.get(view)
+                if not value:
+                    invalid_views.append(view)
+                    continue
+                if isinstance(value, str) and not Path(value).exists():
+                    invalid_views.append(view)
+            if invalid_views:
+                return ExecutionResult(
+                    success=False,
+                    data=result,
+                    error=f"无效视角图像: {', '.join(sorted(invalid_views))}",
                 )
             return ExecutionResult(success=True, data=result, message="真人代机已完成操作")
         return ExecutionResult(success=False, data=result, error="真人代机执行失败")

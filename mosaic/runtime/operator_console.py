@@ -20,6 +20,11 @@ class OperatorConsoleState:
 
     def publish_step(self, payload: dict[str, Any]) -> None:
         with self._lock:
+            if self.current_step is not None:
+                current_id = self.current_step.get("step_id")
+                incoming_id = payload.get("step_id")
+                if current_id != incoming_id:
+                    raise RuntimeError("已有进行中的真人代机步骤")
             self.current_step = copy.deepcopy(payload)
 
     def submit_result(self, payload: dict[str, Any]) -> None:

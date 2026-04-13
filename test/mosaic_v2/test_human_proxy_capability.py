@@ -14,9 +14,15 @@ from mosaic.runtime.turn_runner import TurnRunner
 
 
 @pytest.mark.asyncio
-async def test_human_proxy_waits_for_submission_and_returns_image_paths():
+async def test_human_proxy_waits_for_submission_and_returns_image_paths(tmp_path):
     console = OperatorConsoleState()
     cap = HumanProxyCapability(console_state=console, timeout_s=2.0)
+    front = tmp_path / "front.jpg"
+    left = tmp_path / "left.jpg"
+    right = tmp_path / "right.jpg"
+    back = tmp_path / "back.jpg"
+    for path in (front, left, right, back):
+        path.write_text("x", encoding="utf-8")
 
     async def submit_later():
         await asyncio.sleep(0.05)
@@ -24,10 +30,10 @@ async def test_human_proxy_waits_for_submission_and_returns_image_paths():
             "step_id": "step-01",
             "operator_result": "completed",
             "images": {
-                "front": "front.jpg",
-                "left": "left.jpg",
-                "right": "right.jpg",
-                "back": "back.jpg",
+                "front": str(front),
+                "left": str(left),
+                "right": str(right),
+                "back": str(back),
             },
             "timestamp": time.time(),
         })
@@ -45,9 +51,14 @@ async def test_human_proxy_waits_for_submission_and_returns_image_paths():
 
 
 @pytest.mark.asyncio
-async def test_human_proxy_requires_all_views():
+async def test_human_proxy_requires_all_views(tmp_path):
     console = OperatorConsoleState()
     cap = HumanProxyCapability(console_state=console, timeout_s=1.0)
+    front = tmp_path / "front.jpg"
+    left = tmp_path / "left.jpg"
+    right = tmp_path / "right.jpg"
+    for path in (front, left, right):
+        path.write_text("x", encoding="utf-8")
 
     async def submit_later():
         await asyncio.sleep(0.05)
@@ -55,9 +66,9 @@ async def test_human_proxy_requires_all_views():
             "step_id": "step-missing-view",
             "operator_result": "completed",
             "images": {
-                "front": "front.jpg",
-                "left": "left.jpg",
-                "right": "right.jpg",
+                "front": str(front),
+                "left": str(left),
+                "right": str(right),
             },
             "timestamp": time.time(),
         })
@@ -71,6 +82,41 @@ async def test_human_proxy_requires_all_views():
 
     assert result.success is False
     assert "缺少" in (result.error or "")
+
+
+@pytest.mark.asyncio
+async def test_human_proxy_rejects_empty_image_path(tmp_path):
+    console = OperatorConsoleState()
+    cap = HumanProxyCapability(console_state=console, timeout_s=1.0)
+    front = tmp_path / "front.jpg"
+    left = tmp_path / "left.jpg"
+    back = tmp_path / "back.jpg"
+    for path in (front, left, back):
+        path.write_text("x", encoding="utf-8")
+
+    async def submit_later():
+        await asyncio.sleep(0.05)
+        console.submit_result({
+            "step_id": "step-empty-view",
+            "operator_result": "completed",
+            "images": {
+                "front": str(front),
+                "left": str(left),
+                "right": "",
+                "back": str(back),
+            },
+            "timestamp": time.time(),
+        })
+
+    asyncio.create_task(submit_later())
+    result = await cap.execute(
+        "request_human_move",
+        {"instruction_text": "前进 1.2 米"},
+        ExecutionContext(session_id="s1", metadata={"step_id": "step-empty-view"}),
+    )
+
+    assert result.success is False
+    assert "无效" in (result.error or "")
 
 
 @pytest.mark.asyncio
@@ -244,6 +290,33 @@ def test_mismatched_submission_does_not_erase_step():
     assert console.current_step == payload
 
 
+def test_operator_console_rejects_overlapping_step():
+    console = OperatorConsoleState()
+    console.publish_step({"step_id": "step-1", "status": "pending"})
+
+    with pytest.raises(RuntimeError):
+        console.publish_step({"step_id": "step-2", "status": "pending"})
+
+    assert console.current_step == {"step_id": "step-1", "status": "pending"}
+
+
+@pytest.mark.asyncio
+async def test_human_proxy_rejects_step_when_one_in_flight():
+    console = OperatorConsoleState()
+    console.publish_step({"step_id": "step-active", "status": "pending"})
+    cap = HumanProxyCapability(console_state=console, timeout_s=0.1)
+
+    result = await cap.execute(
+        "request_human_move",
+        {"instruction_text": "前进 1.2 米"},
+        ExecutionContext(session_id="s1", metadata={"step_id": "step-new"}),
+    )
+
+    assert result.success is False
+    assert "已有进行中的真人代机步骤" in (result.error or "")
+    assert console.current_step == {"step_id": "step-active", "status": "pending"}
+
+
 @pytest.mark.asyncio
 async def test_late_submission_after_timeout_is_buffered():
     console = OperatorConsoleState()
@@ -277,3 +350,122 @@ async def test_republish_same_step_preserves_active_waiter():
 
     result = await waiter
     assert result == payload
+
+
+@pytest.mark.asyncio
+async def test_turn_runner_fallback_step_id_includes_turn_id():
+    class CapturingCapability:
+        def __init__(self):
+            from mosaic.plugin_sdk.types import PluginMeta
+
+            self.meta = PluginMeta(
+                id="cap",
+                name="Cap",
+                version="0.1.0",
+                description="",
+                kind="capability",
+            )
+            self.ctx = None
+
+        def get_supported_intents(self):
+            return ["dummy_tool"]
+
+        def get_tool_definitions(self):
+            return [{
+                "name": "dummy_tool",
+                "description": "test tool",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                },
+            }]
+
+        async def execute(self, intent, params, ctx):
+            from mosaic.plugin_sdk.types import ExecutionResult
+
+            self.ctx = ctx
+            return ExecutionResult(success=True, data={})
+
+    class CapturingProvider:
+        def __init__(self):
+            from mosaic.plugin_sdk.types import PluginMeta
+
+            self.meta = PluginMeta(
+                id="prov",
+                name="Provider",
+                version="0.1.0",
+                description="",
+                kind="provider",
+            )
+            self.calls = 0
+
+        async def chat(self, messages, tools, config):
+            from mosaic.plugin_sdk.types import ProviderResponse
+
+            if self.calls == 0:
+                self.calls += 1
+                return ProviderResponse(
+                    content="",
+                    tool_calls=[{
+                        "name": "dummy_tool",
+                        "arguments": {},
+                    }],
+                    usage={},
+                )
+            return ProviderResponse(content="完成", tool_calls=[], usage={})
+
+        async def stream(self, messages, tools, config):
+            from mosaic.plugin_sdk.types import ProviderResponse
+
+            yield ProviderResponse(content="完成", tool_calls=[], usage={})
+
+        async def validate_auth(self):
+            return True
+
+    class ContextEngine:
+        def __init__(self):
+            from mosaic.plugin_sdk.types import PluginMeta
+
+            self.meta = PluginMeta(
+                id="ce",
+                name="ContextEngine",
+                version="0.1.0",
+                description="",
+                kind="context-engine",
+            )
+
+        async def ingest(self, session_id, message):
+            return None
+
+        async def assemble(self, session_id, token_budget):
+            from mosaic.plugin_sdk.types import AssembleResult
+
+            return AssembleResult(messages=[], token_count=0)
+
+        async def compact(self, session_id, force=False):
+            raise AssertionError("compact should not be called")
+
+    cap = CapturingCapability()
+    registry = PluginRegistry()
+    registry.register("prov", CapturingProvider, "provider")
+    registry.set_default_provider("prov")
+    registry.register("ce", ContextEngine, "context-engine")
+    registry.set_slot("context-engine", "ce")
+    registry.register("cap", lambda: cap, "capability")
+
+    runner = TurnRunner(
+        registry=registry,
+        event_bus=EventBus(),
+        hooks=HookManager(),
+        system_prompt="",
+    )
+
+    smgr = SessionManager()
+    session = await smgr.create_session("default", "cli")
+    await smgr.run_turn(session.session_id, "测试工具", runner)
+
+    expected_turn_id = f"turn-{session.session_id[:8]}-1"
+    expected_step_id = f"{session.session_id}:{expected_turn_id}:dummy_tool:0"
+    assert cap.ctx is not None
+    assert cap.ctx.turn_id == expected_turn_id
+    assert cap.ctx.metadata.get("step_id") == expected_step_id

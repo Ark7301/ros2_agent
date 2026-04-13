@@ -278,7 +278,7 @@ class TurnRunner:
                     continue  # 跳过执行，让 LLM 重新规划
 
             tool_results = await self._execute_tools(
-                response.tool_calls, session,
+                response.tool_calls, session, turn_id,
             )
             all_tool_calls.extend(response.tool_calls)
             all_results.extend(tool_results)
@@ -376,6 +376,7 @@ class TurnRunner:
         self,
         tool_calls: list[dict],
         session,
+        turn_id: str,
     ) -> list[Any]:
         """并行执行工具调用
 
@@ -389,9 +390,10 @@ class TurnRunner:
             cap = self._resolve_capability_for_tool(tc["name"])
             step_id = tc.get("id")
             if not step_id:
-                step_id = f"{session.session_id}:{tc['name']}:{index}"
+                step_id = f"{session.session_id}:{turn_id}:{tc['name']}:{index}"
             ctx = ExecutionContext(
                 session_id=session.session_id,
+                turn_id=turn_id,
                 metadata={"step_id": step_id},
             )
             # arguments 可能是 JSON 字符串，需要解析
