@@ -1,0 +1,13 @@
+demo:
+  mode: human_surrogate_memory
+  environment:
+    label: "small_home"
+    target_rooms: ["客厅", "卧室", "厨房"]
+    target_objects: ["黄色毛巾", "咖啡机"]
+  operator:
+    required_views: ["front", "left", "right", "back"]
+    timeout_s: 180
+  success_rules:
+    min_stable_rooms: 2
+    min_landmarks_per_room: 1
+    min_targets_indexed: 1

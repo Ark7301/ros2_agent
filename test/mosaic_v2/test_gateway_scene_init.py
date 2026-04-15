@@ -48,7 +48,8 @@ def _minimal_env_config() -> dict:
 
 def _make_mosaic_yaml(tmpdir: str, env_filename: str = "env.yaml",
                       ros2_enabled: bool = False,
-                      scene_graph_section: dict | None = None) -> str:
+                      scene_graph_section: dict | None = None,
+                      human_proxy_enabled: bool = False) -> str:
     """生成临时 mosaic.yaml，返回路径"""
     mosaic_cfg: dict = {
         "gateway": {"max_concurrent_sessions": 1, "idle_session_timeout_s": 10},
@@ -65,6 +66,12 @@ def _make_mosaic_yaml(tmpdir: str, env_filename: str = "env.yaml",
         },
         "routing": {"default_agent": "default", "bindings": []},
         "ros2": {"enabled": ros2_enabled},
+        "human_proxy": {
+            "enabled": human_proxy_enabled,
+            "host": "127.0.0.1",
+            "port": 8876,
+            "timeout_s": 180.0,
+        },
     }
     if scene_graph_section:
         mosaic_cfg["scene_graph"] = scene_graph_section
@@ -247,3 +254,37 @@ class TestSpatialProviderInjection:
             assert server._scene_graph_mgr is None
             nav_kwargs = server._registry._factory_kwargs.get("navigation", {})
             assert "spatial_provider" not in nav_kwargs
+
+
+class TestHumanProxyEnablement:
+    """验证 human_proxy.enabled gating 行为"""
+
+    @patch("mosaic.plugin_sdk.registry.PluginRegistry.discover")
+    def test_human_proxy_disabled_skips_console(self, mock_discover: MagicMock) -> None:
+        """human_proxy.enabled=false 时不创建 OperatorConsole"""
+        from mosaic.gateway.server import GatewayServer
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_path = os.path.join(tmpdir, "env.yaml")
+            _write_yaml(env_path, _minimal_env_config())
+            mosaic_path = _make_mosaic_yaml(tmpdir, human_proxy_enabled=False)
+
+            server = GatewayServer(config_path=mosaic_path)
+
+            assert server._operator_console_state is None
+            assert server._operator_console is None
+
+    @patch("mosaic.plugin_sdk.registry.PluginRegistry.discover")
+    def test_human_proxy_enabled_creates_console(self, mock_discover: MagicMock) -> None:
+        """human_proxy.enabled=true 时创建 OperatorConsole"""
+        from mosaic.gateway.server import GatewayServer
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_path = os.path.join(tmpdir, "env.yaml")
+            _write_yaml(env_path, _minimal_env_config())
+            mosaic_path = _make_mosaic_yaml(tmpdir, human_proxy_enabled=True)
+
+            server = GatewayServer(config_path=mosaic_path)
+
+            assert server._operator_console_state is not None
+            assert server._operator_console is not None

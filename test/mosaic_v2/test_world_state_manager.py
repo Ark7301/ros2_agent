@@ -23,6 +23,7 @@ from mosaic.runtime.world_state_manager import (
     RobotState, TaskEpisode, PlanningContext,
     WorkingMemory, SemanticMemory, EpisodicMemory, WorldStateManager,
 )
+from mosaic.runtime.human_surrogate_models import CheckpointNode, MemoryTargetIndex
 from mosaic.plugin_sdk.types import MemoryEntry
 
 
@@ -265,3 +266,41 @@ def test_world_state_manager_memory_plugin_compat(key, content):
     assert entry_after is None, (
         f"delete 后 get('{key}') 应返回 None，实际为 {entry_after}"
     )
+
+
+def test_world_state_manager_checkpoint_and_target_metadata() -> None:
+    sgm = _make_sgm_with_agent()
+    wm = WorkingMemory()
+    sm = SemanticMemory(sgm)
+    em = EpisodicMemory()
+    wsm = WorldStateManager(working=wm, semantic=sm, episodic=em)
+
+    checkpoint = CheckpointNode(
+        checkpoint_id="cp-meta",
+        parent_checkpoint_id="cp-parent",
+        resolved_room_label="测试室",
+        known_landmarks=["灯"],
+        known_objects=["笔"],
+    )
+    target_index = MemoryTargetIndex(
+        target_label="目标X",
+        candidate_room_labels=["测试室"],
+        candidate_checkpoint_ids=["cp-meta"],
+        supporting_landmarks=["灯"],
+        confidence=0.75,
+    )
+
+    wsm.store_checkpoint_node(checkpoint)
+    wsm.store_target_index(target_index)
+
+    cp_entry = wsm._kv_store.get("checkpoint:cp-meta")
+    assert cp_entry is not None, "checkpoint entry 应存在"
+    assert cp_entry.key == "checkpoint:cp-meta"
+    assert cp_entry.metadata["known_landmarks"] == ["灯"]
+    assert cp_entry.metadata["known_objects"] == ["笔"]
+
+    target_entry = wsm._kv_store.get("target:目标X")
+    assert target_entry is not None, "target index entry 应存在"
+    assert target_entry.metadata["candidate_checkpoint_ids"] == ["cp-meta"]
+    assert target_entry.metadata["supporting_landmarks"] == ["灯"]
+    assert target_entry.metadata["confidence"] == 0.75

@@ -18,6 +18,7 @@ from typing import Any
 
 from mosaic.plugin_sdk.types import ProviderConfig, ExecutionContext, ExecutionResult
 from mosaic.runtime.scene_graph_manager import SceneGraphManager
+from mosaic.runtime.planning_context_formatter import PlanningContextFormatter
 
 
 @dataclass
@@ -57,6 +58,7 @@ class TurnRunner:
         turn_timeout_s: float = 120,
         system_prompt: str = "",
         scene_graph_mgr: SceneGraphManager | None = None,
+        world_state_mgr=None,
     ):
         self._registry = registry       # PluginRegistry 实例
         self._event_bus = event_bus      # EventBus 实例
@@ -65,6 +67,44 @@ class TurnRunner:
         self._turn_timeout_s = turn_timeout_s    # Turn 超时时间（秒）
         self._system_prompt = system_prompt      # 系统提示词
         self._scene_graph_mgr = scene_graph_mgr  # 场景图管理器（可选）
+        self._world_state_mgr = world_state_mgr
+        self._context_formatter = PlanningContextFormatter()
+
+    def _build_system_content(self, user_input: str) -> str:
+        base_prompt = self._system_prompt or ""
+
+        def build_scene_graph_content() -> str | None:
+            if not self._scene_graph_mgr:
+                return None
+            try:
+                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
+            except Exception:
+                return None
+            if base_prompt:
+                if scene_text:
+                    return f"{base_prompt}\n\n{scene_text}"
+                return base_prompt
+            return scene_text
+
+        if self._world_state_mgr:
+            try:
+                context = self._world_state_mgr.assemble_context(user_input)
+                robot_state = self._world_state_mgr.working.get_robot_state()
+                aria_block = self._context_formatter.render(robot_state, context)
+                if base_prompt:
+                    return f"{base_prompt}\n\n{aria_block}"
+                return aria_block
+            except Exception as exc:
+                self._log(f"⚠️ ARIA 组装失败，回退到场景图: {exc}")
+                scene_content = build_scene_graph_content()
+                if scene_content is not None:
+                    return scene_content
+                return base_prompt
+
+        scene_content = build_scene_graph_content()
+        if scene_content is not None:
+            return scene_content
+        return base_prompt
 
     async def run(self, session, user_input: str) -> TurnResult:
         """执行完整 Turn — 入口方法，含超时保护
@@ -122,13 +162,14 @@ class TurnRunner:
 
         # 构建消息列表：system prompt → 历史上下文 → 当前用户输入
         messages: list[dict] = []
-        if self._system_prompt:
-            # ★ 集成点 1：组装上下文时注入场景图子图
-            system_content = self._system_prompt
-            if self._scene_graph_mgr:
-                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
-                system_content = f"{self._system_prompt}\n\n{scene_text}"
-            messages.append({"role": "system", "content": system_content})
+        system_content = self._build_system_content(user_input)
+        system_message_index: int | None = None
+        if system_content:
+            system_message_index = len(messages)
+            messages.append({
+                "role": "system",
+                "content": system_content,
+            })
         messages.extend(context.messages)
         messages.append({"role": "user", "content": user_input})
 
@@ -237,7 +278,7 @@ class TurnRunner:
                     continue  # 跳过执行，让 LLM 重新规划
 
             tool_results = await self._execute_tools(
-                response.tool_calls, session,
+                response.tool_calls, session, turn_id,
             )
             all_tool_calls.extend(response.tool_calls)
             all_results.extend(tool_results)
@@ -255,12 +296,13 @@ class TurnRunner:
                         self._scene_graph_mgr.update_from_execution(
                             tc["name"], args, tr.success,
                         )
-                # 刷新场景图（环境已变化）
-                scene_text = self._scene_graph_mgr.get_scene_prompt(user_input)
-                if messages and messages[0].get("role") == "system":
-                    messages[0]["content"] = (
-                        f"{self._system_prompt}\n\n{scene_text}"
-                    )
+            # 刷新系统消息（环境已变化）
+            if system_message_index is not None:
+                msg = messages[system_message_index]
+                if msg.get("role") == "system":
+                    refreshed_content = self._build_system_content(user_input)
+                    if refreshed_content:
+                        msg["content"] = refreshed_content
 
             # 过程输出：工具执行结果
             for tc, tr in zip(response.tool_calls, tool_results):
@@ -334,6 +376,7 @@ class TurnRunner:
         self,
         tool_calls: list[dict],
         session,
+        turn_id: str,
     ) -> list[Any]:
         """并行执行工具调用
 
@@ -342,10 +385,17 @@ class TurnRunner:
         异常被封装为 ExecutionResult(success=False)，保证返回数量与输入一致。
         """
         tasks = []
-        for tc in tool_calls:
+        for index, tc in enumerate(tool_calls):
             # 根据工具名查找对应的 CapabilityPlugin
             cap = self._resolve_capability_for_tool(tc["name"])
-            ctx = ExecutionContext(session_id=session.session_id)
+            step_id = tc.get("id")
+            if not step_id:
+                step_id = f"{session.session_id}:{turn_id}:{tc['name']}:{index}"
+            ctx = ExecutionContext(
+                session_id=session.session_id,
+                turn_id=turn_id,
+                metadata={"step_id": step_id},
+            )
             # arguments 可能是 JSON 字符串，需要解析
             args = tc.get("arguments", {})
             if isinstance(args, str):

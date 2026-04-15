@@ -15,6 +15,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from mosaic.runtime.human_surrogate_models import CheckpointNode, MemoryTargetIndex
 from mosaic.runtime.scene_graph import SceneGraph
 from mosaic.runtime.scene_graph_manager import SceneGraphManager
 from mosaic.plugin_sdk.types import PluginMeta, MemoryEntry
@@ -258,6 +259,31 @@ class WorldStateManager:
             key=key,
             content=content,
             metadata=metadata,
+        )
+
+    def store_checkpoint_node(self, checkpoint: CheckpointNode) -> None:
+        key = f"checkpoint:{checkpoint.checkpoint_id}"
+        self._kv_store[key] = MemoryEntry(
+            key=key,
+            content=checkpoint.resolved_room_label,
+            metadata={
+                "parent_checkpoint_id": checkpoint.parent_checkpoint_id,
+                "known_landmarks": checkpoint.known_landmarks,
+                "known_objects": checkpoint.known_objects,
+            },
+        )
+
+    def store_target_index(self, target_index: MemoryTargetIndex) -> None:
+        key = f"target:{target_index.target_label}"
+        self._kv_store[key] = MemoryEntry(
+            key=key,
+            content=target_index.target_label,
+            metadata={
+                "candidate_room_labels": target_index.candidate_room_labels,
+                "candidate_checkpoint_ids": target_index.candidate_checkpoint_ids,
+                "supporting_landmarks": target_index.supporting_landmarks,
+                "confidence": target_index.confidence,
+            },
         )
 
     async def search(self, query: str, top_k: int = 5) -> list[MemoryEntry]:
