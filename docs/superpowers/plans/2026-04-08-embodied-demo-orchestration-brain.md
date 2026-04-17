@@ -3,14 +3,14 @@
 - title: Embodied Demo Orchestration Brain Implementation Plan
 - status: active
 - owner: repository-maintainers
-- updated: 2026-04-08
+- updated: 2026-04-12
 - tags: docs, plan, aria, demo, embodied-agent, orchestration
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a mature MOSAIC demo where ARIA acts as the decision-and-orchestration brain for fine-grained embodied tasks, with VLM-assisted information acquisition, replanning as the core product differentiator, shared world state, and operator-visible execution traces even when full ROS2 infrastructure is incomplete.
+**Goal:** Build a mature MOSAIC demo where ARIA acts as the decision-and-orchestration brain for fine-grained embodied tasks, using a human-carried camera as the surrogate robot body so that VLM-assisted real-world observation, memory construction, memory recall, and replanning can be validated without an actual robot platform.
 
-**Architecture:** Deepen the existing `Gateway -> TurnRunner -> Capability` loop instead of introducing a second planner stack. Make `WorldStateManager / ARIA` the primary planning context source, insert a VLM observation capability into the decision loop, define an atomic action schema aligned with future base capabilities, upgrade the stub capabilities into scene-aware mock executors, add a deterministic demo director for runtime failures and perception mismatches, and ship a scripted demo runner with canonical replanning scenarios. Real ROS2, SLAM, and full online VLM infrastructure remain optional integration slots, not prerequisites for the demo milestone.
+**Architecture:** Deepen the existing `Gateway -> TurnRunner -> Capability` loop instead of introducing a second planner stack. Make `WorldStateManager / ARIA` the primary planning context source, insert a VLM observation capability into the decision loop, define an atomic action schema aligned with future base capabilities, add a human-proxy execution layer that turns MOSAIC instructions into developer exploration actions with a handheld camera, and ship a scripted demo runner with canonical memory-and-replanning scenarios. Real ROS2, SLAM, and full online robot infrastructure remain optional integration slots, not prerequisites for the demo milestone.
 
 **Tech Stack:** Python, pytest, Hypothesis-compatible test style, Markdown, YAML config, existing MOSAIC plugin SDK, SceneGraph / ARIA runtime
 
@@ -21,13 +21,15 @@
 The milestone is done when all of the following are true:
 
 - A single MOSAIC process can run a mock-first demo with no ROS2 requirement.
+- MOSAIC can issue stepwise exploration or observation instructions to a human proxy operator.
+- A developer can carry a camera and follow those instructions to simulate robot exploration in a real environment.
 - At least one canonical scenario requires VLM observation before action choice or goal confirmation.
 - Canonical scenarios are decomposed into explicit atomic tool calls rather than coarse macro-steps.
 - `TurnRunner` builds its planning prompt from ARIA rather than only from `SceneGraphManager`.
 - The system can complete at least three canonical scenarios:
-  - `coffee_delivery`: observe kitchen scene, confirm coffee machine and cup, navigate, operate appliance, wait, pick up, deliver
-  - `towel_fetch`: observe bedroom scene, confirm yellow towel, navigate, pick up, navigate to user, hand over
-  - `blocked_route_replan`: detect a runtime navigation blockage or perception mismatch, refresh world state, and replan to an alternate route
+  - `guided_exploration_memory_build`: explore multiple rooms with a handheld camera and build ARIA memory from real observations
+  - `object_revisit_by_memory`: revisit a previously observed target using ARIA memory
+  - `perception_failure_replan`: recover from perception mismatch or operator-reported exploration failure
 - At least one scenario demonstrates runtime failure followed by successful replanning.
 - At least one scenario demonstrates perception feedback forcing recovery or replanning.
 - The operator can see turn-level trace output: ARIA context summary, tool calls, tool results, world updates, recalled episodes.
@@ -38,6 +40,7 @@ The milestone is done when all of the following are true:
 - Real Nav2 execution as a release blocker
 - Live SLAM map building as a release blocker
 - Full online multi-camera VLM perception infrastructure as a release blocker
+- Real robot body, base controller, or manipulator as a release blocker
 - True vector retrieval as a release blocker
 - Multi-process or distributed multi-agent orchestration
 
@@ -48,15 +51,18 @@ The milestone is done when all of the following are true:
 - `mosaic/runtime/atomic_action_schema.py`
 - `mosaic/runtime/planning_context_formatter.py`
 - `mosaic/runtime/demo_director.py`
+- `plugins/capabilities/human_proxy/__init__.py`
 - `plugins/capabilities/vlm_observe/__init__.py`
 - `plugins/capabilities/world_query/__init__.py`
 - `config/environments/demo_home.yaml`
 - `config/demo/embodied_brain.yaml`
+- `config/demo/human_proxy_protocol.yaml`
 - `config/demo/observation_frames/README.md`
 - `scripts/run_embodied_demo.py`
 - `docs/dev/runbooks/embodied-demo.md`
 - `test/mosaic_v2/test_atomic_action_schema.py`
 - `test/mosaic_v2/test_aria_context_integration.py`
+- `test/mosaic_v2/test_human_proxy_capability.py`
 - `test/mosaic_v2/test_vlm_observe_capability.py`
 - `test/mosaic_v2/test_scene_aware_mock_capabilities.py`
 - `test/mosaic_v2/test_world_query_capability.py`
@@ -79,26 +85,46 @@ The milestone is done when all of the following are true:
 
 ## CTO Review Priority Changes
 
-The current plan is revised by three non-negotiable priority changes:
+The current plan is revised by four non-negotiable priority changes:
 
-1. **VLM must participate in the decision loop**
+1. **Primary validation shifts from pure mock world to human surrogate exploration**
+MOSAIC must be validated in the real world, but without a real robot. The developer carrying a camera is the temporary robot body.
+
+2. **VLM must participate in the decision loop**
 The demo may keep infrastructure mock-first, but it may not remain information-mock-only. Use fixture-backed or cached VLM observations if live camera streaming is unavailable.
 
-2. **Task orchestration must be atomic**
+3. **Task orchestration must be atomic**
 The planner must operate on fine-grained capability units that align with future base abilities, not opaque high-level macros.
 
-3. **Replanning is the hero capability**
+4. **Replanning is the hero capability**
 The flagship scenario is no longer “basic happy-path completion”, but “failure feedback -> context refresh -> successful recovery”.
+
+## Primary Validation Mode
+
+This phase no longer treats a pure shared mock world as the main evidence source. The main validation substrate is:
+
+1. MOSAIC issues exploration or observation commands.
+2. A developer manually carries a camera to follow those commands.
+3. Captured frames are passed through the VLM observation path.
+4. ARIA updates memory from those real observations.
+5. Later steps must query, reuse, and correct that memory.
+
+Pure mock world state remains useful as a fallback or for unit tests, but it is not sufficient as the primary demo evidence.
 
 ## Atomic Orchestration Contract
 
 All canonical scenarios should be decomposed into explicit atomic actions. The minimum atomic catalog for this phase is:
 
+- `request_human_move`
+- `capture_frame`
 - `observe_scene`
 - `confirm_object`
 - `locate_target`
 - `navigate_to`
 - `rotate`
+- `report_checkpoint`
+- `update_memory`
+- `recall_memory`
 - `operate_appliance`
 - `wait_appliance`
 - `pick_up`
@@ -108,10 +134,20 @@ All canonical scenarios should be decomposed into explicit atomic actions. The m
 The first execution slices should therefore be interpreted in this order:
 
 1. define the atomic action schema
-2. add the VLM observation capability
-3. make ARIA the primary context source
-4. make mock capabilities world-aware
-5. harden feedback-driven replanning
+2. add the human proxy execution capability and operator protocol
+3. add the VLM observation capability
+4. make ARIA the primary context source
+5. harden memory update and feedback-driven replanning
+
+## Execution Rebaseline Note
+
+Because the 2026-04-12 CTO direction changes the primary validation substrate, the detailed tasks below should be interpreted with these substitutions:
+
+- `shared demo world` is no longer the primary proof artifact; `human proxy exploration loop + real observation frames` is
+- operator-facing proxy execution is now mandatory, not optional
+- tasks that only prove stub-to-stub orchestration are insufficient without a real observation loop
+
+Task 1 and Task 4 remain structurally valid. The original mock-centric interpretation of Task 2 and Task 5 must be re-scoped around human-proxy execution before implementation starts.
 
 ---
 
@@ -122,7 +158,7 @@ The first execution slices should therefore be interpreted in this order:
 - Modify: `mosaic/runtime/world_state_manager.py`
 - Modify: `mosaic/runtime/turn_runner.py`
 - Modify: `mosaic/gateway/server.py`
-- Test: `test/mosaic_v2/test_aria_context_integration.py`
+- Test: `test/mosaic_v2/test_aria>_context_integration.py`
 
 - [ ] **Step 1: Write the failing integration test for ARIA prompt assembly**
 

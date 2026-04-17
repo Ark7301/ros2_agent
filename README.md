@@ -1,275 +1,213 @@
-# MOSAIC Demo — 智能机器人 Agent 交互系统
+# MOSAIC — 面向 ROS 2 的具身智能 Agent 编排系统
 
-MOSAIC（Modular Open-Source Agent for Intelligent Control）初期验证 Demo，演示基于 LLM 的机器人自然语言任务调度系统。
+MOSAIC（Modular Orchestration System for Agent-driven Intelligent Control）是一个面向 ROS 2 生态的 AI Agent 机器人任务调度与具身智能编排系统。当前主线聚焦于：
 
-用户通过自然语言下达指令（如"导航到厨房"），系统自动完成 **意图解析 → 任务规划 → 执行调度** 全流程。
+- 以 LLM/ReAct 作为任务决策与工具编排核心
+- 以 ARIA 三层记忆作为世界状态与长期记忆中枢
+- 以插件化 Capability 封装导航、操作、视觉、人工代理等能力
+- 以 VLM 和拓扑语义记忆验证真实世界感知与记忆能力
 
-## Documentation
+仓库中仍保留早期 `mosaic_demo/`，用于简单自然语言任务调度管线验证；但当前主要开发主线已经迁移到 `mosaic/`、`plugins/` 和 `docs/dev/` 下的 MOSAIC v2 架构。
+
+## 当前主线
+
+当前已实现的第一阶段 demo 是 **human-surrogate ARIA memory validation**：
+
+- 开发者手持摄像头，临时充当“机器人身体”
+- MOSAIC 向执行人下达移动与观察指令
+- 执行人保存并回传 `front / left / right / back` 四向图像路径
+- VLM 对四向观察进行语义解析
+- ARIA 构建拓扑优先的语义记忆
+- 后续任务可以基于记忆选择候选 checkpoint 进行回访
+
+这个阶段不依赖真实机器人本体、Nav2 或 SLAM，目标是先验证 MOSAIC 的真实世界记忆能力与细粒度任务编排能力。
+
+## 快速运行
+
+查看当前 demo 启动信息：
+
+```bash
+PYTHONPATH=. python3 scripts/run_human_surrogate_memory_demo.py --dry-run
+```
+
+正常启动 human-surrogate demo：
+
+```bash
+PYTHONPATH=. python3 scripts/run_human_surrogate_memory_demo.py
+```
+
+停止 demo：
+
+```bash
+Ctrl+C
+```
+
+操作员流程见：
+
+- [Human-surrogate memory demo runbook](docs/dev/runbooks/human-surrogate-memory-demo.md)
+
+## 文档入口
 
 - [Documentation Hub](docs/README.md)
 - [Developer Documentation](docs/dev/README.md)
 - [Research Documentation](docs/research/README.md)
 - [Archive](docs/archive/README.md)
-- [Knowledge Base Design Spec](docs/superpowers/specs/2026-04-03-document-knowledge-base-design.md)
-- [Knowledge Base Implementation Plan](docs/superpowers/plans/2026-04-03-document-knowledge-base-reorganization.md)
+- [ARIA-centric architecture status](docs/dev/architecture/2026-04-08-aria-centric-architecture-status.md)
+- [Embodied demo brain CTO review](docs/dev/architecture/2026-04-08-embodied-demo-brain-cto-review.md)
+- [Human-surrogate ARIA memory validation spec](docs/superpowers/specs/2026-04-12-human-surrogate-aria-memory-validation-design-zh.md)
 
-## 系统架构
+## 当前架构概览
 
+```text
+用户任务
+  -> Gateway / Session / TurnRunner
+  -> ARIA / WorldStateManager
+  -> Capability Plugins
+       - human_proxy     # 真人代机执行层
+       - vlm_observe     # 四向图像语义观察
+       - navigation      # Nav2 / mock 导航能力
+       - manipulation    # mock 操作能力
+       - appliance       # mock 家电能力
+       - motion          # mock 运动能力
+  -> ARIA 记忆更新 / 回访候选选择
 ```
-用户输入 → CLIInterface → TaskParser(LLM) → TaskPlanner → TaskExecutor → Mock能力模块
-                                ↑                ↑              ↑
-                         MiniMaxProvider   CapabilityRegistry   重试/退避
-                      (Anthropic Tool Use)  (意图→能力映射)
-```
 
-核心模块：
+核心运行时模块：
 
 | 模块 | 路径 | 职责 |
-|------|------|------|
-| CLI 交互界面 | `interfaces/cli_interface.py` | 接收自然语言输入，展示执行结果 |
-| 任务解析器 | `agent_core/task_parser.py` | 通过 LLM Function Calling 解析意图 |
-| 任务规划器 | `agent_core/task_planner.py` | 将意图映射为有序执行计划 |
-| 任务执行器 | `agent_core/task_executor.py` | 优先级队列调度，指数退避重试 |
-| 能力注册中心 | `interfaces_abstract/capability_registry.py` | 管理能力注册与意图解析 |
-| Mock 导航 | `capabilities/mock_navigation.py` | 模拟导航能力（navigate_to / patrol） |
-| Mock 运动 | `capabilities/mock_motion.py` | 模拟运动能力（rotate / stop） |
-| 地名服务 | `capabilities/location_service.py` | 语义地名 → 坐标映射 |
-| MiniMax Provider | `model_providers/minimax_provider.py` | MiniMax Anthropic Tool Use 意图解析（单轮 Function Call） |
-| MiniMax 客户端 | `model_providers/minimax_client.py` | MiniMax Anthropic 兼容 API 客户端（支持 Thinking / Tool Use） |
-| LLM Provider | `model_providers/llm_provider.py` | 美的 AIMP Claude API 调用封装（备用） |
-| 美的 AIMP 客户端 | `model_providers/midea_client.py` | 美的 AIMP Claude API 异步客户端（指数退避重试） |
-| 配置管理 | `config/config_manager.py` | YAML 配置加载与嵌套查询 |
+|---|---|---|
+| GatewayServer | `mosaic/gateway/server.py` | 系统入口，装配插件、会话、路由、TurnRunner、ARIA |
+| TurnRunner | `mosaic/runtime/turn_runner.py` | ReAct 循环、工具调用、ARIA 上下文注入 |
+| WorldStateManager / ARIA | `mosaic/runtime/world_state_manager.py` | WorkingMemory + SemanticMemory + EpisodicMemory 统一门面 |
+| SceneGraphManager | `mosaic/runtime/scene_graph_manager.py` | 场景图生命周期、子图检索、计划验证、执行后更新 |
+| Operator Console | `mosaic/runtime/operator_console.py` | 本地 human proxy 操作台状态与 HTTP 控制台 |
+| TopologySemanticMapper | `mosaic/runtime/topology_semantic_mapper.py` | checkpoint 拓扑语义地图与目标索引 |
+| VLM Pipeline | `mosaic/runtime/vlm_pipeline/` | VLM 结构化观察解析 |
+| Plugin Registry | `mosaic/plugin_sdk/registry.py` | 插件发现、slot/provider 管理、依赖注入 |
+
+核心能力插件：
+
+| 插件 | 路径 | 职责 |
+|---|---|---|
+| Human Proxy | `plugins/capabilities/human_proxy/` | 将移动指令交给真人代机执行，并接收四向图像路径 |
+| VLM Observe | `plugins/capabilities/vlm_observe/` | 对四向图像做 VLM 语义观察并聚合结果 |
+| Navigation | `plugins/capabilities/navigation/` | Nav2/mock 导航能力 |
+| Manipulation | `plugins/capabilities/manipulation/` | mock 物品拿取与递交 |
+| Appliance | `plugins/capabilities/appliance/` | mock 家电操作与等待 |
+| Motion | `plugins/capabilities/motion/` | mock 旋转与停止 |
 
 ## 环境要求
 
 - Python 3.10+
-- 依赖包：
-  - `pyyaml` — YAML 配置解析
-  - `httpx` — 异步 HTTP 客户端（调用 OpenAI API）
-
-## 安装
-
-```bash
-# 克隆项目
-git clone <repo-url>
-cd ros2_agent
-
-# 安装依赖
-pip install pyyaml httpx
-```
+- Python 依赖：
+  - `pyyaml`
+  - `httpx`
+  - `pytest`
+  - `hypothesis`
+- 如需真实 VLM 调用，需要配置对应 API key。当前仓库已有 MiniMax provider 与 VLM 分析器基础模块。
 
 ## 配置
 
-### 1. 设置 API Key
+常用配置文件：
 
-系统通过环境变量读取 API 密钥，禁止硬编码：
+| 文件 | 用途 |
+|---|---|
+| `config/mosaic.yaml` | MOSAIC v2 主配置，含 gateway、plugins、routing、ARIA、VLM、human_proxy 等配置 |
+| `config/demo/human_surrogate_memory.yaml` | 第一阶段 human-surrogate demo 配置 |
+| `config/demo/human_proxy_protocol.yaml` | 真人代机操作协议默认配置 |
+| `config/environments/home.yaml` | 静态家庭环境场景图配置 |
+
+API key 通过环境变量配置，禁止硬编码：
 
 ```bash
-# 美的 AIMP（默认使用）
-export MIDEA_API_KEY="your-midea-api-key-here"
-
-# OpenAI（如需切换回 OpenAI 时使用）
-export OPENAI_API_KEY="your-api-key-here"
-
-# MiniMax（如需使用 MiniMax API）
 export MINIMAX_API_KEY="your-minimax-api-key-here"
+export MIDEA_API_KEY="your-midea-api-key-here"
+export OPENAI_API_KEY="your-openai-api-key-here"
 ```
 
-### 2. 模型配置
+## 测试
 
-编辑 `mosaic_demo/config/agent_config.yaml`：
-
-```yaml
-model_provider:
-  type: "llm"
-  config:
-    model: "gpt-4"              # 模型名称，支持 gpt-4 / gpt-3.5-turbo 等
-    api_base: "https://api.openai.com/v1"  # API 地址，可替换为兼容接口
-    temperature: 0.1            # 生成温度，越低越确定
-    timeout: 30                 # 请求超时（秒）
-
-retry:
-  max_retries: 3                # 最大重试次数
-  backoff_base: 2               # 指数退避基数
-
-logging:
-  level: "INFO"                 # 日志级别：DEBUG / INFO / WARNING / ERROR
-```
-
-> 如果使用兼容 OpenAI 接口的第三方服务（如 Azure OpenAI、本地部署模型），修改 `api_base` 即可。
-
-### 3. 地名配置
-
-编辑 `mosaic_demo/config/locations.yaml` 添加语义地名映射：
-
-```yaml
-locations:
-  厨房: {x: 2.0, y: 3.5, theta: 0.0}
-  客厅: {x: 0.0, y: 0.0, theta: 0.0}
-  卧室: {x: -1.0, y: 2.0, theta: 1.57}
-  充电桩: {x: 0.0, y: 0.0, theta: 0.0}
-  大门: {x: 3.0, y: -1.0, theta: 3.14}
-```
-
-## 启动
+第一阶段 human-surrogate demo 的 focused suite：
 
 ```bash
-python -m mosaic_demo.main
+pytest \
+  test/mosaic_v2/test_atomic_action_schema.py \
+  test/mosaic_v2/test_human_proxy_capability.py \
+  test/mosaic_v2/test_vlm_observe_capability.py \
+  test/mosaic_v2/test_topology_semantic_mapper.py \
+  test/mosaic_v2/test_recall_revisit_orchestrator.py \
+  test/mosaic_v2/test_aria_context_integration.py \
+  test/mosaic_v2/test_human_surrogate_demo_e2e.py -q
 ```
 
-启动后进入交互界面：
-
-```
-==================================================
-  MOSAIC Demo — 智能 Agent 交互系统
-  输入自然语言指令，例如：导航到厨房
-  输入 '退出' 或 'exit' 关闭系统
-==================================================
->>>
-```
-
-## 使用示例
-
-### 导航指令
-
-```
->>> 导航到厨房
-正在处理...
-✓ 已到达厨房
-
->>> 去卧室
-正在处理...
-✓ 已到达卧室
-```
-
-### 运动指令
-
-```
->>> 旋转
-正在处理...
-✓ 运动完成
-
->>> 停止
-正在处理...
-✓ 运动完成
-```
-
-### 错误处理
-
-```
->>> 导航到阳台
-正在处理...
-✗ 无法解析目标地名: 阳台（错误: 地名 '阳台' 未在 LocationService 中注册）
-```
-
-### 退出系统
-
-```
->>> 退出
-再见！系统已安全关闭。
-```
-
-也可使用 `exit` 或 `Ctrl+C` 退出。
-
-## 支持的意图
-
-| 意图 | 能力模块 | 说明 |
-|------|----------|------|
-| `navigate_to` | navigation | 导航到指定地点，需要 target 参数 |
-| `patrol` | navigation | 巡逻 |
-| `rotate` | motion | 旋转 |
-| `stop` | motion | 停止运动 |
-
-## 处理流程
-
-1. 用户输入自然语言 → `CLIInterface` 封装为 `TaskContext`
-2. `TaskParser` 调用 LLM（Anthropic Tool Use）解析为 `TaskResult`（包含 intent + params），支持多轮 tool call 对话
-3. `TaskPlanner` 通过 `CapabilityRegistry` 将意图映射为 `ExecutionPlan`
-4. `TaskExecutor` 按序执行计划中的每个动作，失败时指数退避重试
-5. 执行结果 `ExecutionResult` 回传至 CLI 展示
-
-## 扩展开发
-
-### 添加新能力
-
-1. 继承 `Capability` 抽象基类：
-
-```python
-from mosaic_demo.interfaces_abstract.capability import Capability
-from mosaic_demo.interfaces_abstract.data_models import (
-    CapabilityStatus, ExecutionResult, Task, TaskStatus,
-)
-
-class MyCapability(Capability):
-    def get_name(self) -> str:
-        return "my_capability"
-
-    def get_supported_intents(self) -> list[str]:
-        return ["my_intent"]
-
-    async def execute(self, task, feedback_callback=None) -> ExecutionResult:
-        # 实现执行逻辑
-        return ExecutionResult(
-            task_id=task.task_id,
-            success=True,
-            message="执行完成",
-            status=TaskStatus.SUCCEEDED,
-        )
-
-    async def cancel(self) -> bool:
-        return True
-
-    async def get_status(self) -> CapabilityStatus:
-        return CapabilityStatus.IDLE
-
-    def get_capability_description(self) -> str:
-        return "我的自定义能力"
-```
-
-2. 在 `main.py` 中注册：
-
-```python
-my_capability = MyCapability()
-registry.register(my_capability)
-```
-
-### 添加新地名
-
-在 `locations.yaml` 中添加条目，或运行时通过 `LocationService.add_location()` 动态添加。
-
-## 运行测试
+全仓库历史测试入口：
 
 ```bash
 pytest test/ -v
 ```
 
-## 项目结构
+## 当前实现结构
 
-```
-mosaic_demo/
-├── main.py                          # 入口文件
-├── config/
-│   ├── agent_config.yaml            # Agent 配置
-│   ├── locations.yaml               # 地名映射
-│   └── config_manager.py            # 配置管理器
-├── agent_core/
-│   ├── task_parser.py               # 任务解析器（LLM 意图解析）
-│   ├── task_planner.py              # 任务规划器（意图→执行计划）
-│   └── task_executor.py             # 任务执行器（优先级队列+重试）
+```text
+mosaic/
+├── gateway/
+│   └── server.py
+├── runtime/
+│   ├── atomic_action_schema.py
+│   ├── human_surrogate_models.py
+│   ├── operator_console.py
+│   ├── planning_context_formatter.py
+│   ├── recall_revisit_orchestrator.py
+│   ├── scene_graph.py
+│   ├── scene_graph_manager.py
+│   ├── topology_semantic_mapper.py
+│   ├── vlm_pipeline/
+│   └── world_state_manager.py
+plugins/
 ├── capabilities/
-│   ├── mock_navigation.py           # Mock 导航能力
-│   ├── mock_motion.py               # Mock 运动能力
-│   └── location_service.py          # 语义地名服务
-├── model_providers/
-│   ├── llm_provider.py              # LLM Provider（Function Calling）
-│   ├── midea_client.py              # 美的 AIMP Claude API 异步客户端
-│   ├── minimax_client.py            # MiniMax Anthropic 兼容 API 客户端
-│   └── openai_client.py             # OpenAI 异步客户端
-├── interfaces/
-│   └── cli_interface.py             # CLI 交互界面
-└── interfaces_abstract/
-    ├── capability.py                # Capability 抽象基类
-    ├── capability_registry.py       # 能力注册中心
-    ├── data_models.py               # 核心数据模型
-    └── model_provider.py            # ModelProvider 抽象基类
+│   ├── human_proxy/
+│   ├── vlm_observe/
+│   ├── navigation/
+│   ├── manipulation/
+│   ├── appliance/
+│   └── motion/
+├── channels/
+├── context_engines/
+├── memory/
+└── providers/
+config/
+├── demo/
+├── environments/
+└── nav2/
+docs/
+├── dev/
+├── research/
+├── archive/
+└── superpowers/
 ```
+
+## 历史 Demo
+
+早期 demo 仍保留在 `mosaic_demo/` 下，用于简单自然语言任务调度验证：
+
+```bash
+python -m mosaic_demo.main
+```
+
+早期 demo 流程：
+
+```text
+用户输入 -> CLIInterface -> TaskParser -> TaskPlanner -> TaskExecutor -> Mock能力模块
+```
+
+该路径不代表当前主要架构，只作为兼容和历史参考。
+
+## 下一阶段方向
+
+第一阶段已经完成“真人代机 + VLM 在环 + ARIA 记忆构建 + 记忆驱动回访”的可运行闭环。后续建议优先推进：
+
+- 失败反馈后的完整重规划能力
+- 记忆召回解释能力
+- operator console 产品化
+- 更强的 VLM 观察与证据管理
+- 真实机器人底盘替换 `HumanProxyCapability`

@@ -3,7 +3,7 @@
 - title: 以 ARIA 为核心的 MOSAIC 系统架构阶段性报告
 - status: active
 - owner: repository-maintainers
-- updated: 2026-04-08
+- updated: 2026-04-15
 - tags: docs, dev, architecture, aria, scene-graph, status-report
 
 ## 1. 目的
@@ -244,6 +244,43 @@ flowchart TD
 | SpatialProvider | 已实现并可注入导航 | 高 | 已形成对外空间接口 |
 | SLAM/VLM 构图管线 | 骨架已在，真实闭环不足 | 中低 | 下一阶段重点 |
 | SensorBridge -> ARIA 实时同步 | 部分预留 | 中低 | 缺少系统级最终接线 |
+
+### 4.4 2026-04-15 实现更新
+
+在本报告写成之后，仓库已经完成了第一阶段“真人代机 ARIA 记忆验证”主线实现。当前新增并已通过 focused verification 的能力包括：
+
+- 人机代理执行层：
+  - `mosaic/runtime/operator_console.py`
+  - `plugins/capabilities/human_proxy/__init__.py`
+- 四向环视 VLM 观察能力：
+  - `plugins/capabilities/vlm_observe/__init__.py`
+- 拓扑语义记忆构建：
+  - `mosaic/runtime/atomic_action_schema.py`
+  - `mosaic/runtime/human_surrogate_models.py`
+  - `mosaic/runtime/topology_semantic_mapper.py`
+- ARIA 上下文与回访编排：
+  - `mosaic/runtime/planning_context_formatter.py`
+  - `mosaic/runtime/recall_revisit_orchestrator.py`
+  - `mosaic/runtime/turn_runner.py`
+  - `mosaic/gateway/server.py`
+- 第一阶段 demo 资产：
+  - `config/demo/human_surrogate_memory.yaml`
+  - `scripts/run_human_surrogate_memory_demo.py`
+  - `docs/dev/runbooks/human-surrogate-memory-demo.md`
+
+这意味着当前仓库已经不只是“ARIA 驱动方案的文档与骨架”，而是具备了一个可运行、可验证、可 dry-run 演示的第一阶段实现。更准确地说，MOSAIC 现在处于：
+
+> **ARIA 第一阶段原型已落地，且已具备“真人代机 + 四向环视图 + 真实 VLM + 拓扑语义记忆 + 记忆驱动回访”的可执行闭环。**
+
+但本报告前文关于“未完成项”的判断仍然成立，只是需要加上边界说明：
+
+- 已完成的是第一阶段验证闭环，不是完整产品形态
+- 仍未完成：
+  - 完整重规划主能力
+  - 实时连续感知
+  - 真实机器人本体执行
+  - 坐标级/SLAM级空间闭环
+  - 向量检索版 EmbodiedRAG
 
 ## 5. 当前架构的本质特征
 

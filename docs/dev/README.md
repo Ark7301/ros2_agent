@@ -3,7 +3,7 @@
 - title: Developer Documentation
 - status: active
 - owner: repository-maintainers
-- updated: 2026-04-03
+- updated: 2026-04-15
 - tags: docs, dev, navigation
 
 ## Purpose
@@ -20,25 +20,25 @@ This section contains material that directly helps contributors set up, run, con
 
 ## Key Documents
 
+- [Human-surrogate memory demo](runbooks/human-surrogate-memory-demo.md)
 - [Simulation environment setup](onboarding/sim-environment-setup.md)
 - [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md)
 - [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md)
 - [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md)
 - [SLAM simulation mapping](runbooks/slam-sim-mapping.md)
 - [Scene graph integration testing](runbooks/scene-graph-integration-testing.md)
-- [Human-surrogate memory demo](runbooks/human-surrogate-memory-demo.md)
 - [API keys reference](reference/api-keys.md)
 - [MOSAIC v2 smoke test](reports/2026-04-03-mosaic-v2-smoke-test.md)
 - [SLAM mapping fix report](reports/2026-04-03-slam-mapping-fix-report.md)
 
 ## Reading Order
 
-1. Read [Simulation environment setup](onboarding/sim-environment-setup.md) to get the environment running.
-2. Consult [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md) for the current system judgment.
-3. Read [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md) for the management-facing next-stage recommendation.
-4. Use [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md) and the process plans under `docs/superpowers/plans/` for execution detail.
-5. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for operational workflows.
-6. Use [API keys reference](reference/api-keys.md) and the reports section as supporting reference and verification material.
+1. Start with [Human-surrogate memory demo](runbooks/human-surrogate-memory-demo.md) if you want to run the currently implemented first-stage demo.
+2. Read [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md) for the current architecture judgment and implementation status.
+3. Read [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md) for the management-facing rationale and staged roadmap.
+4. Use [Simulation environment setup](onboarding/sim-environment-setup.md) if you need the broader ROS2 / Isaac Sim environment.
+5. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for adjacent operational workflows.
+6. Use [API keys reference](reference/api-keys.md), the reports section, and the process plans under `docs/superpowers/plans/` as supporting reference.
 
 ## Document Status
 
