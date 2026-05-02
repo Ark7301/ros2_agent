@@ -25,6 +25,7 @@ This section contains material that directly helps contributors set up, run, con
 - [Auto mapping improvement plan](architecture/2026-03-11-auto-mapping-improvement-plan.md)
 - [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md)
 - [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md)
+- [MOSAIC v3 research demo architecture spec](architecture/2026-05-03-mosaic-v3-research-demo-spec.md)
 - [SLAM simulation mapping](runbooks/slam-sim-mapping.md)
 - [Scene graph integration testing](runbooks/scene-graph-integration-testing.md)
 - [API keys reference](reference/api-keys.md)
@@ -35,10 +36,11 @@ This section contains material that directly helps contributors set up, run, con
 
 1. Start with [Human-surrogate memory demo](runbooks/human-surrogate-memory-demo.md) if you want to run the currently implemented first-stage demo.
 2. Read [ARIA-centric architecture status](architecture/2026-04-08-aria-centric-architecture-status.md) for the current architecture judgment and implementation status.
-3. Read [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md) for the management-facing rationale and staged roadmap.
-4. Use [Simulation environment setup](onboarding/sim-environment-setup.md) if you need the broader ROS2 / Isaac Sim environment.
-5. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for adjacent operational workflows.
-6. Use [API keys reference](reference/api-keys.md), the reports section, and the process plans under `docs/superpowers/plans/` as supporting reference.
+3. Read [MOSAIC v3 research demo architecture spec](architecture/2026-05-03-mosaic-v3-research-demo-spec.md) for the next thesis-defensible, demo-verifiable architecture scope.
+4. Read [Embodied demo brain CTO review](architecture/2026-04-08-embodied-demo-brain-cto-review.md) for the management-facing rationale and staged roadmap.
+5. Use [Simulation environment setup](onboarding/sim-environment-setup.md) if you need the broader ROS2 / Isaac Sim environment.
+6. Use [SLAM simulation mapping](runbooks/slam-sim-mapping.md) and [Scene graph integration testing](runbooks/scene-graph-integration-testing.md) for adjacent operational workflows.
+7. Use [API keys reference](reference/api-keys.md), the reports section, and the process plans under `docs/superpowers/plans/` as supporting reference.
 
 ## Document Status
 
